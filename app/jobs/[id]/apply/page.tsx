@@ -1546,7 +1546,6 @@ export default function JobApplicationPage() {
                     {renderFieldBlock(getField("birth_date", "Date of Birth"))}
                     {renderFieldBlock(getField("gender", "Gender"))}
                     {renderFieldBlock(getField("religion", "Religion"))}
-                    {renderFieldBlock(getField("nricfin", "NRIC/FIN"))}
                     {renderFieldBlock(getField("latest_degree", "Highest Qualification"))}
                     {renderFieldBlock(getField("city", "Singapore Address"))}
                     {renderFieldBlock(getField("passportno", "Passport Number"))}
