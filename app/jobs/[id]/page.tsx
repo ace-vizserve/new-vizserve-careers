@@ -1,3 +1,4 @@
+import { createClient } from "@/lib/server";
 import { ArrowLeft, Briefcase, Building2, CheckCircle2, Clock, MapPin, Send } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -24,17 +25,17 @@ interface JobDetail {
   updated_at?: string;
 }
 
-const SITE_URL = "https://careers.hfse.edu.sg";
-
 async function getJob(id: string): Promise<JobDetail | null> {
-  const res = await fetch(`${SITE_URL}/api/jobs/${id}`, {
-    next: { revalidate: 300 },
-  });
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("jobs")
+    .select("*")
+    .eq("id", id)
+    .eq("is_active", true)
+    .single();
 
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error("Failed to load job");
-
-  return res.json();
+  if (error || !data) return null;
+  return data;
 }
 
 function stripHtml(html: string) {
@@ -226,7 +227,7 @@ export default async function JobDetailPage({ params }: Params) {
       "@type": "Organization",
       name: job.company?.name || "Vizserve",
       sameAs: "https://hfse.edu.sg/",
-      logo: `${SITE_URL}/assets/geg-favicon.png`,
+      logo: "/assets/logo.png",
     },
     ...(job.location
       ? {
