@@ -232,21 +232,15 @@ export default function JobsClient({ initialJobs }: { initialJobs: Job[] }) {
                     }`}
                     style={isActive ? { borderColor: '#B8C7E0', boxShadow: '0 4px 6px -1px rgba(66, 88, 165, 0.1), 0 2px 4px -2px rgba(66, 88, 165, 0.1)' } : {}}>
                     <div className="flex items-start gap-4 mb-3.5">
-                      {job.org_logo ? (
-                        <div className="flex-shrink-0 w-12 h-12 rounded-xl border border-slate-100 bg-white p-1.5 flex items-center justify-center shadow-sm">
-                          <Image
-                            src={job.org_logo}
-                            alt={job.org_name}
-                            width={40}
-                            height={40}
-                            className="object-contain"
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex-shrink-0 w-12 h-12 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-center">
-                          <Briefcase className="w-5 h-5 text-slate-300" />
-                        </div>
-                      )}
+                      <div className="flex-shrink-0 w-12 h-12 rounded-xl border border-slate-100 bg-white p-1.5 flex items-center justify-center shadow-sm">
+                        <Image
+                          src="/assets/logo.png"
+                          alt="VizServe"
+                          width={40}
+                          height={40}
+                          className="object-contain"
+                        />
+                      </div>
 
                       <div className="flex-1 min-w-0">
                         {job.urgently_hiring && (
@@ -259,16 +253,14 @@ export default function JobsClient({ initialJobs }: { initialJobs: Job[] }) {
                           {job.position_name || job.title || "Position Title"}
                         </h3>
 
-                        {job.org_name && (
-                          <a
-                            target="_blank"
-                            href={job.org_website}
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-xs font-bold hover:underline mt-0.5 inline-block truncate max-w-full"
-                            style={{ color: '#4258A5' }}>
-                            {job.org_name}
-                          </a>
-                        )}
+                        <a
+                          target="_blank"
+                          href="https://vizserve.com"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-xs font-bold hover:underline mt-0.5 inline-block truncate max-w-full"
+                          style={{ color: '#4258A5' }}>
+                          VizServe
+                        </a>
                       </div>
 
                       <LocationBadge label={formatLocation(job)} />
@@ -304,36 +296,28 @@ export default function JobsClient({ initialJobs }: { initialJobs: Job[] }) {
 
                     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 sm:p-8">
                       <div className="flex items-start gap-5 mb-6">
-                        {selectedJob.org_logo ? (
-                          <div className="flex-shrink-0 w-16 h-16 rounded-2xl border border-slate-100 bg-white p-2 flex items-center justify-center shadow-sm">
-                            <Image
-                              src={selectedJob.org_logo}
-                              alt={selectedJob.org_name}
-                              width={52}
-                              height={52}
-                              className="object-contain"
-                            />
-                          </div>
-                        ) : (
-                          <div className="flex-shrink-0 w-16 h-16 rounded-2xl border border-slate-100 bg-slate-50 flex items-center justify-center">
-                            <Briefcase className="w-7 h-7 text-slate-300" />
-                          </div>
-                        )}
+                        <div className="flex-shrink-0 w-16 h-16 rounded-2xl border border-slate-100 bg-white p-2 flex items-center justify-center shadow-sm">
+                          <Image
+                            src="/assets/logo.png"
+                            alt="VizServe"
+                            width={52}
+                            height={52}
+                            className="object-contain"
+                          />
+                        </div>
 
                         <div className="flex-1 min-w-0">
                           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight tracking-tight mb-1">
                             {selectedJob.position_name || selectedJob.title}
                           </h1>
 
-                          {selectedJob.org_name && (
-                            <a
-                              target="_blank"
-                              href={selectedJob.org_website}
-                              className="text-sm font-bold hover:underline"
-                              style={{ color: '#4258A5' }}>
-                              {selectedJob.org_name}
-                            </a>
-                          )}
+                          <a
+                            target="_blank"
+                            href="https://vizserve.com"
+                            className="text-sm font-bold hover:underline"
+                            style={{ color: '#4258A5' }}>
+                            VizServe
+                          </a>
                         </div>
                       </div>
 

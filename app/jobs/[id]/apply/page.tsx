@@ -1229,19 +1229,13 @@ export default function JobApplicationPage() {
                 </div>
 
                 <div className="flex items-center gap-4 mb-4">
-                  {job?.org_logo ? (
-                    <Image
-                      height={40}
-                      width={40}
-                      src={job.org_logo}
-                      alt={job.org_name ?? "Organization Logo"}
-                      className="h-14 w-14 sm:h-16 sm:w-20 rounded-xl object-contain border border-slate-100 shadow-sm bg-white p-1.5 shrink-0"
-                    />
-                  ) : (
-                    <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-bold text-xl border border-slate-200 shrink-0">
-                      {job?.org_name?.charAt(0) || "C"}
-                    </div>
-                  )}
+                  <Image
+                    height={40}
+                    width={40}
+                    src="/assets/logo.png"
+                    alt="VizServe"
+                    className="h-14 w-14 sm:h-16 sm:w-20 rounded-xl object-contain border border-slate-100 shadow-sm bg-white p-1.5 shrink-0"
+                  />
 
                   <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
                     {job?.position_name || "Open Position"}
@@ -1249,27 +1243,23 @@ export default function JobApplicationPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-sm text-slate-600">
-                  <span className="font-semibold text-slate-900">{job?.org_name || "Company"}</span>
+                  <span className="font-semibold text-slate-900">VizServe</span>
 
-                  {job?.org_website && (
-                    <>
-                      <span className="hidden sm:block text-slate-300">|</span>
-                      <Link
-                        href={job.org_website}
-                        target="_blank"
-                        className="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1">
-                        Visit Website
-                        <svg
-                          className="w-3 h-3"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth="2.5">
-                          <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      </Link>
-                    </>
-                  )}
+                  <span className="hidden sm:block text-slate-300">|</span>
+                  <Link
+                    href="https://vizserve.com"
+                    target="_blank"
+                    className="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1">
+                    Visit Website
+                    <svg
+                      className="w-3 h-3"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2.5">
+                      <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </Link>
 
                   {job?.location && (
                     <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 ring-1 ring-inset ring-emerald-600/20">

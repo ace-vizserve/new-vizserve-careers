@@ -59,7 +59,7 @@ function sanitizeJob(body: any) {
     urgently_hiring:  Boolean(body.urgently_hiring),
     easily_apply:     Boolean(body.easily_apply),
     org_name:         String(body.org_name         ?? "VizServe").trim(),
-    org_logo:         String(body.org_logo         ?? "/assets/VizServeWhite.png").trim(),
+    org_logo:         String(body.org_logo         ?? "/assets/logo.png").trim(),
     org_website:      String(body.org_website      ?? "https://vizserve.com").trim(),
     is_active:        body.is_active !== false,
   };

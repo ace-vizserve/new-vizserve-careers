@@ -82,7 +82,7 @@ export default function JobForm({ initial, jobId }: JobFormProps) {
       requirements: [],
       benefits: [],
       org_name: "VizServe",
-      org_logo: "/assets/VizServeWhite.png",
+      org_logo: "/assets/logo.png",
       org_website: "https://vizserve.com",
     };
 
