@@ -313,7 +313,10 @@ export default async function JobDetailPage({ params }: Params) {
                 <h2 className="text-2xl font-bold text-gray-900">Job Description</h2>
               </div>
 
-              <div className="text-gray-700">{renderJobDescription(job.description || "")}</div>
+              <div
+                className="rich-text"
+                dangerouslySetInnerHTML={{ __html: job.description || "" }}
+              />
             </article>
 
             <div className="grid md:grid-cols-2 gap-6 mb-8">

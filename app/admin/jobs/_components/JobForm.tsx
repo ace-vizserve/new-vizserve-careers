@@ -2,7 +2,10 @@
 
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { useState } from "react";
+
+const RichTextEditor = dynamic(() => import("./RichTextEditor"), { ssr: false });
 
 interface JobFormData {
   position_name:   string;
@@ -260,13 +263,10 @@ export default function JobForm({ initial, jobId }: JobFormProps) {
           {/* Job Description */}
           <div>
             <Label required>Job Description</Label>
-            <textarea
+            <RichTextEditor
               value={form.description}
-              onChange={e => set("description", e.target.value)}
-              className={`${inputCls} resize-none`}
-              rows={12}
-              placeholder="Add a job description..."
-              required
+              onChange={v => set("description", v)}
+              placeholder="Add a job description or paste from Word..."
             />
           </div>
 

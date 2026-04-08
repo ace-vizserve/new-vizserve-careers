@@ -407,47 +407,12 @@ export default function JobsClient({ initialJobs }: { initialJobs: Job[] }) {
                               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
                                 Full Description
                               </p>
-                              <div className="text-slate-700 text-sm leading-relaxed space-y-4">
+                              <div className="text-slate-700 text-sm leading-relaxed">
                                 {selectedJob.description ? (
-                                  (() => {
-                                    const text = selectedJob.description.replace(/<[^>]*>/g, "");
-                                    const sections = text.split(/(?=JOB QUALIFICATIONS:|JOB DETAILS:)/);
-                                    return sections.map((section, sectionIdx) => {
-                                      if (!section.trim()) return null;
-                                      if (
-                                        section.startsWith("JOB QUALIFICATIONS:") ||
-                                        section.startsWith("JOB DETAILS:")
-                                      ) {
-                                        const headerMatch = section.match(/^(JOB QUALIFICATIONS:|JOB DETAILS:)/);
-                                        const header = headerMatch ? headerMatch[0] : "";
-                                        const content = section.replace(header, "").trim();
-                                        const items = content
-                                          .split(/(?=[A-Z][a-z]{2,})/)
-                                          .map((item) => item.trim())
-                                          .filter((item) => item.split(/\s+/).length >= 5);
-                                        return (
-                                          <div key={sectionIdx}>
-                                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
-                                              {header.replace(":", "")}
-                                            </p>
-                                            <ul className="space-y-2">
-                                              {items.map((item, idx) => (
-                                                <li key={idx} className="flex items-start gap-2.5 text-slate-600">
-                                                  <span className="flex-shrink-0 w-1 h-1 rounded-full mt-2" style={{ backgroundColor: '#4258A5' }} />
-                                                  {item}
-                                                </li>
-                                              ))}
-                                            </ul>
-                                          </div>
-                                        );
-                                      }
-                                      return (
-                                        <p key={sectionIdx} className="text-slate-600">
-                                          {section}
-                                        </p>
-                                      );
-                                    });
-                                  })()
+                                  <div
+                                    className="rich-text"
+                                    dangerouslySetInnerHTML={{ __html: selectedJob.description }}
+                                  />
                                 ) : (
                                   <p className="text-slate-400 italic text-sm">No description available.</p>
                                 )}
