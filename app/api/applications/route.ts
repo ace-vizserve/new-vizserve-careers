@@ -36,11 +36,11 @@ export async function POST(req: Request) {
       .from("applications")
       .insert({
         job_id: jobId,
-        status: "pending",
+        status: "new_candidates",
 
         // Section 01
         expected_salary:          appData.expected_salary         ?? "",
-        expected_salary_currency: appData.expected_salary_currency ?? "SGD",
+        expected_salary_currency: appData.expected_salary_currency ?? "PHP",
         linkedin:                 appData.linkedin                 ?? "",
         industries:               appData.industries               ?? [],
         years_of_experience:      appData.years_of_experience      ?? "",

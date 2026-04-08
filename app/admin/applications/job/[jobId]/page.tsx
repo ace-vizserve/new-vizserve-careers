@@ -64,22 +64,34 @@ interface Toast {
 /* ── Pipeline stages ───────────────────────────────────── */
 
 const STAGES = [
-  "pending",
-  "reviewed",
-  "shortlisted",
-  "rejected",
-  "hired",
+  "new_candidates",
+  "paper_screening",
+  "for_examination",
+  "initial_interview",
+  "rc_bc",
+  "second_stage_interview",
+  "final_stage_interview",
+  "offered",
+  "to_onboard",
+  "started",
+  "regularization",
 ] as const;
 
 const STAGE_META: Record<
   string,
   { label: string; color: string; bg: string; border: string; dot: string }
 > = {
-  pending:     { label: "Pending",     color: "text-amber-700",   bg: "bg-amber-50",   border: "border-amber-200",   dot: "bg-amber-400"   },
-  reviewed:    { label: "Reviewed",    color: "text-blue-700",    bg: "bg-blue-50",    border: "border-blue-200",    dot: "bg-blue-400"    },
-  shortlisted: { label: "Shortlisted", color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200", dot: "bg-emerald-400" },
-  rejected:    { label: "Rejected",    color: "text-rose-600",    bg: "bg-rose-50",    border: "border-rose-200",    dot: "bg-rose-400"    },
-  hired:       { label: "Hired",       color: "text-purple-700",  bg: "bg-purple-50",  border: "border-purple-200",  dot: "bg-purple-400"  },
+  new_candidates:         { label: "New Candidates",    color: "text-amber-700",    bg: "bg-amber-50",    border: "border-amber-200",    dot: "bg-amber-400"    },
+  paper_screening:        { label: "Paper Screening",   color: "text-blue-700",     bg: "bg-blue-50",     border: "border-blue-200",     dot: "bg-blue-400"     },
+  for_examination:        { label: "For Examination",   color: "text-indigo-700",   bg: "bg-indigo-50",   border: "border-indigo-200",   dot: "bg-indigo-400"   },
+  initial_interview:      { label: "Initial Interview", color: "text-cyan-700",     bg: "bg-cyan-50",     border: "border-cyan-200",     dot: "bg-cyan-400"     },
+  rc_bc:                  { label: "RC/BC",             color: "text-teal-700",     bg: "bg-teal-50",     border: "border-teal-200",     dot: "bg-teal-400"     },
+  second_stage_interview: { label: "2nd Interview",     color: "text-sky-700",      bg: "bg-sky-50",      border: "border-sky-200",      dot: "bg-sky-400"      },
+  final_stage_interview:  { label: "Final Interview",   color: "text-violet-700",   bg: "bg-violet-50",   border: "border-violet-200",   dot: "bg-violet-400"   },
+  offered:                { label: "Offered",           color: "text-orange-700",   bg: "bg-orange-50",   border: "border-orange-200",   dot: "bg-orange-400"   },
+  to_onboard:             { label: "To Onboard",        color: "text-emerald-700",  bg: "bg-emerald-50",  border: "border-emerald-200",  dot: "bg-emerald-400"  },
+  started:                { label: "Started",           color: "text-green-700",    bg: "bg-green-50",    border: "border-green-200",    dot: "bg-green-400"    },
+  regularization:         { label: "Regularization",    color: "text-purple-700",   bg: "bg-purple-50",   border: "border-purple-200",   dot: "bg-purple-400"   },
 };
 
 const DROP_REASONS = [
@@ -104,7 +116,7 @@ function groupByStatus(apps: Application[]) {
     if (app.status === "dropped") {
       dropped.push(app);
     } else {
-      const bucket = map[app.status] ?? map["pending"];
+      const bucket = map[app.status] ?? map["new_candidates"];
       bucket.push(app);
     }
   }
@@ -640,7 +652,7 @@ export default function JobPipelinePage() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        status: "pending",
+        status: "new_candidates",
         drop_reason: null,
         drop_details: null,
       }),
@@ -711,9 +723,9 @@ export default function JobPipelinePage() {
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">In Pipeline</span>
               <span>{totalApps}</span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-purple-200 bg-purple-50 text-sm font-semibold text-purple-700">
-              <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wide">Hired</span>
-              <span>{(columns["hired"] ?? []).length}</span>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-sm font-semibold text-emerald-700">
+              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide">Onboarded</span>
+              <span>{(columns["to_onboard"] ?? []).length}</span>
             </div>
             <button
               onClick={() => setShowDroppedModal(true)}
