@@ -1,31 +1,25 @@
 "use client";
 
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 interface JobFormData {
-  position_name:    string;
-  description:      string;
-  location:         string;
-  city:             string;
-  state:            string;
-  country:          string;
-  employment_type:  string;
-  contract_details: string;
-  is_remote:        boolean;
-  salary_min:       string;
-  salary_max:       string;
-  currency:         string;
-  frequency:        string;
-  requirements:     string[];
-  benefits:         string[];
-  urgently_hiring:  boolean;
-  easily_apply:     boolean;
-  org_name:         string;
-  org_logo:         string;
-  org_website:      string;
-  is_active:        boolean;
+  position_name:   string;
+  description:     string;
+  location:        string;
+  city:            string;
+  state:           string;
+  country:         string;
+  employment_type: string;
+  is_remote:       boolean;
+  headcount:       number;
+  salary_min:      string;
+  salary_max:      string;
+  currency:        string;
+  frequency:       string;
+  urgently_hiring: boolean;
+  is_active:       boolean;
 }
 
 interface JobFormProps {
@@ -34,27 +28,21 @@ interface JobFormProps {
 }
 
 const EMPTY: JobFormData = {
-  position_name:    "",
-  description:      "",
-  location:         "",
-  city:             "",
-  state:            "",
-  country:          "",
-  employment_type:  "Full-Time",
-  contract_details: "",
-  is_remote:        false,
-  salary_min:       "",
-  salary_max:       "",
-  currency:         "SGD",
-  frequency:        "month",
-  requirements:     [],
-  benefits:         [],
-  urgently_hiring:  false,
-  easily_apply:     true,
-  org_name:         "VizServe",
-  org_logo:         "/assets/VizServeWhite.png",
-  org_website:      "https://vizserve.com",
-  is_active:        true,
+  position_name:   "",
+  description:     "",
+  location:        "",
+  city:            "",
+  state:           "",
+  country:         "",
+  employment_type: "Full-Time",
+  is_remote:       false,
+  headcount:       1,
+  salary_min:      "",
+  salary_max:      "",
+  currency:        "PHP",
+  frequency:       "Monthly",
+  urgently_hiring: false,
+  is_active:       true,
 };
 
 const inputCls =
@@ -67,40 +55,15 @@ const Label = ({ children, required }: { children: React.ReactNode; required?: b
   </label>
 );
 
-const Toggle = ({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) => (
-  <label className="flex items-center gap-3 cursor-pointer select-none">
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors ${checked ? "" : "bg-slate-200"}`}
-      style={checked ? { backgroundColor: '#4258A5' } : {}}>
-      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition duration-200 ${checked ? "translate-x-4" : "translate-x-0"}`} />
-    </button>
-    <span className="text-sm text-slate-700 font-medium">{label}</span>
-  </label>
-);
-
 export default function JobForm({ initial, jobId }: JobFormProps) {
-  const router  = useRouter();
-  const isEdit  = Boolean(jobId);
-  const [form,  setForm]    = useState<JobFormData>({ ...EMPTY, ...initial });
+  const router = useRouter();
+  const isEdit = Boolean(jobId);
+  const [form, setForm]     = useState<JobFormData>({ ...EMPTY, ...initial });
   const [saving, setSaving] = useState(false);
-  const [error,  setError]  = useState("");
-
-  // Dynamic list helpers
-  const [reqInput, setReqInput] = useState("");
-  const [benInput, setBenInput] = useState("");
+  const [error, setError]   = useState("");
 
   const set = (key: keyof JobFormData, value: any) =>
     setForm((prev) => ({ ...prev, [key]: value }));
-
-  const addToList = (key: "requirements" | "benefits", value: string) => {
-    if (!value.trim()) return;
-    set(key, [...form[key], value.trim()]);
-  };
-
-  const removeFromList = (key: "requirements" | "benefits", idx: number) =>
-    set(key, form[key].filter((_, i) => i !== idx));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,6 +74,13 @@ export default function JobForm({ initial, jobId }: JobFormProps) {
       ...form,
       salary_min: form.salary_min ? Number(form.salary_min) : null,
       salary_max: form.salary_max ? Number(form.salary_max) : null,
+      contract_details: form.employment_type,
+      easily_apply: false,
+      requirements: [],
+      benefits: [],
+      org_name: "VizServe",
+      org_logo: "/assets/VizServeWhite.png",
+      org_website: "https://vizserve.com",
     };
 
     const url    = isEdit ? `/api/admin/jobs/${jobId}` : "/api/admin/jobs";
@@ -132,24 +102,23 @@ export default function JobForm({ initial, jobId }: JobFormProps) {
     router.push("/admin/jobs");
   };
 
-  const Section = ({ title }: { title: string }) => (
-    <div className="col-span-2 pt-4">
-      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2 mb-4">{title}</p>
-    </div>
-  );
-
   return (
-    <div className="p-8 max-w-4xl">
-      <div className="flex items-center gap-4 mb-8">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition-all">
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">{isEdit ? "Edit Job" : "New Job Posting"}</h1>
-          <p className="text-sm text-slate-400 mt-0.5">Fill in the details below</p>
+    <div className="p-8 w-full">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition-all">
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">{isEdit ? "Edit Job" : "Create Job"}</h1>
+            <p className="text-sm text-slate-400 mt-0.5">
+              A job represents a new opening, an open position or a vacancy listing.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -157,164 +126,179 @@ export default function JobForm({ initial, jobId }: JobFormProps) {
         <div className="bg-rose-50 border border-rose-200 text-rose-700 text-sm px-4 py-3 rounded-xl mb-6">{error}</div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-0">
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+      <form onSubmit={handleSubmit}>
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 space-y-6">
 
-          <Section title="Position Details" />
-
-          <div className="md:col-span-2">
-            <Label required>Job Title / Position Name</Label>
-            <input value={form.position_name} onChange={e => set("position_name", e.target.value)} className={inputCls} placeholder="e.g. Virtual Assistant" required />
+          {/* Position Name */}
+          <div>
+            <Label required>Position Name</Label>
+            <input
+              value={form.position_name}
+              onChange={e => set("position_name", e.target.value)}
+              className={inputCls}
+              placeholder="e.g. Virtual Assistant"
+              required
+            />
           </div>
 
-          <div className="md:col-span-2">
+          {/* Location + Remote */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-2">
+              <Label>Location</Label>
+              <input
+                value={form.location}
+                onChange={e => set("location", e.target.value)}
+                className={inputCls}
+                placeholder="Add location"
+              />
+            </div>
+            <div className="flex items-end pb-1">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={form.is_remote}
+                  onChange={e => set("is_remote", e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 text-[#4258A5] focus:ring-[#4258A5]/30"
+                />
+                <span className="text-sm text-slate-700 font-medium">Remote</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Country / City / State */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label>Country</Label>
+              <input value={form.country} onChange={e => set("country", e.target.value)} className={inputCls} placeholder="e.g. Philippines" />
+            </div>
+            <div>
+              <Label>City</Label>
+              <input value={form.city} onChange={e => set("city", e.target.value)} className={inputCls} placeholder="e.g. Taguig" />
+            </div>
+            <div>
+              <Label>State / Province</Label>
+              <input value={form.state} onChange={e => set("state", e.target.value)} className={inputCls} placeholder="e.g. Metro Manila" />
+            </div>
+          </div>
+
+          {/* Headcount */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label>Headcount</Label>
+              <input
+                type="number"
+                min={1}
+                value={form.headcount}
+                onChange={e => set("headcount", Number(e.target.value))}
+                className={inputCls}
+              />
+            </div>
+          </div>
+
+          {/* Contract Details (Employment Type) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label>Contract Details</Label>
+              <select value={form.employment_type} onChange={e => set("employment_type", e.target.value)} className={inputCls}>
+                <option value="Full-Time">Full-Time</option>
+                <option value="Part-Time">Part-Time</option>
+                <option value="Freelance">Freelance</option>
+                <option value="Internship">Internship</option>
+                <option value="Contract">Contract</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Salary */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label>Minimum Salary</Label>
+              <input
+                type="number"
+                value={form.salary_min}
+                onChange={e => set("salary_min", e.target.value)}
+                className={inputCls}
+                placeholder="Add minimum salary"
+              />
+            </div>
+            <div>
+              <Label>Maximum Salary</Label>
+              <input
+                type="number"
+                value={form.salary_max}
+                onChange={e => set("salary_max", e.target.value)}
+                className={inputCls}
+                placeholder="Add maximum salary"
+              />
+            </div>
+          </div>
+
+          {/* Currency + Frequency */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label>Currency</Label>
+              <select value={form.currency} onChange={e => set("currency", e.target.value)} className={inputCls}>
+                <option value="PHP">Philippine Peso</option>
+                <option value="USD">US Dollar</option>
+                <option value="SGD">Singapore Dollar</option>
+                <option value="EUR">Euro</option>
+                <option value="GBP">British Pound</option>
+              </select>
+            </div>
+            <div>
+              <Label>Select Frequency</Label>
+              <select value={form.frequency} onChange={e => set("frequency", e.target.value)} className={inputCls}>
+                <option value="Monthly">Monthly</option>
+                <option value="Yearly">Yearly</option>
+                <option value="Weekly">Weekly</option>
+                <option value="Daily">Daily</option>
+                <option value="Hourly">Hourly</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Job Description */}
+          <div>
             <Label required>Job Description</Label>
             <textarea
               value={form.description}
               onChange={e => set("description", e.target.value)}
               className={`${inputCls} resize-none`}
-              rows={10}
-              placeholder="Describe the role, responsibilities, and what you're looking for…"
+              rows={12}
+              placeholder="Add a job description..."
               required
             />
           </div>
 
-          <Section title="Employment" />
-
-          <div>
-            <Label required>Employment Type</Label>
-            <select value={form.employment_type} onChange={e => set("employment_type", e.target.value)} className={inputCls}>
-              <option value="Full-Time">Full-Time</option>
-              <option value="Part-Time">Part-Time</option>
-              <option value="Freelance">Freelance</option>
-              <option value="Internship">Internship</option>
-              <option value="Contract">Contract</option>
-            </select>
-          </div>
-
-          <div>
-            <Label>Contract Details</Label>
-            <input value={form.contract_details} onChange={e => set("contract_details", e.target.value)} className={inputCls} placeholder="e.g. full_time, part_time" />
-          </div>
-
-          <Section title="Location" />
-
-          <div>
-            <Label>Location (display)</Label>
-            <input value={form.location} onChange={e => set("location", e.target.value)} className={inputCls} placeholder="e.g. Singapore" />
-          </div>
-          <div>
-            <Label>Country</Label>
-            <input value={form.country} onChange={e => set("country", e.target.value)} className={inputCls} placeholder="e.g. Singapore" />
-          </div>
-          <div>
-            <Label>City</Label>
-            <input value={form.city} onChange={e => set("city", e.target.value)} className={inputCls} placeholder="e.g. Taguig" />
-          </div>
-          <div>
-            <Label>State / Province</Label>
-            <input value={form.state} onChange={e => set("state", e.target.value)} className={inputCls} placeholder="e.g. Metro Manila" />
-          </div>
-
-          <div className="md:col-span-2 flex flex-wrap gap-6">
-            <Toggle label="Remote Position"  checked={form.is_remote}       onChange={v => set("is_remote", v)} />
-            <Toggle label="Urgently Hiring"  checked={form.urgently_hiring}  onChange={v => set("urgently_hiring", v)} />
-            <Toggle label="Easy Apply"       checked={form.easily_apply}     onChange={v => set("easily_apply", v)} />
-            <Toggle label="Published (Active)" checked={form.is_active}      onChange={v => set("is_active", v)} />
-          </div>
-
-          <Section title="Compensation (optional)" />
-
-          <div>
-            <Label>Min Salary</Label>
-            <input type="number" value={form.salary_min} onChange={e => set("salary_min", e.target.value)} className={inputCls} placeholder="e.g. 3000" />
-          </div>
-          <div>
-            <Label>Max Salary</Label>
-            <input type="number" value={form.salary_max} onChange={e => set("salary_max", e.target.value)} className={inputCls} placeholder="e.g. 5000" />
-          </div>
-          <div>
-            <Label>Currency</Label>
-            <select value={form.currency} onChange={e => set("currency", e.target.value)} className={inputCls}>
-              {["SGD","USD","PHP","EUR","GBP"].map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div>
-            <Label>Pay Frequency</Label>
-            <select value={form.frequency} onChange={e => set("frequency", e.target.value)} className={inputCls}>
-              {["month","year","week","day","hour"].map(f => <option key={f} value={f}>{f}</option>)}
-            </select>
-          </div>
-
-          <Section title="Requirements" />
-          <div className="md:col-span-2 space-y-2">
-            {form.requirements.map((r, i) => (
-              <div key={i} className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100 text-sm text-slate-700">
-                <span className="flex-1">{r}</span>
-                <button type="button" onClick={() => removeFromList("requirements", i)} className="text-slate-400 hover:text-rose-500 transition-colors">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
-            <div className="flex gap-2">
+          {/* Publish + Urgently Hiring checkboxes */}
+          <div className="flex flex-wrap gap-6 pt-2">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
               <input
-                value={reqInput}
-                onChange={e => setReqInput(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addToList("requirements", reqInput); setReqInput(""); } }}
-                className={inputCls}
-                placeholder="Add a requirement and press Enter"
+                type="checkbox"
+                checked={form.is_active}
+                onChange={e => set("is_active", e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 text-[#4258A5] focus:ring-[#4258A5]/30"
               />
-              <button type="button" onClick={() => { addToList("requirements", reqInput); setReqInput(""); }}
-                className="px-3 py-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition-all">
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          <Section title="Benefits" />
-          <div className="md:col-span-2 space-y-2">
-            {form.benefits.map((b, i) => (
-              <div key={i} className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100 text-sm text-slate-700">
-                <span className="flex-1">{b}</span>
-                <button type="button" onClick={() => removeFromList("benefits", i)} className="text-slate-400 hover:text-rose-500 transition-colors">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
-            <div className="flex gap-2">
+              <span className="text-sm text-slate-700 font-medium">Publish to career page</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer select-none">
               <input
-                value={benInput}
-                onChange={e => setBenInput(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addToList("benefits", benInput); setBenInput(""); } }}
-                className={inputCls}
-                placeholder="Add a benefit and press Enter"
+                type="checkbox"
+                checked={form.urgently_hiring}
+                onChange={e => set("urgently_hiring", e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 text-[#4258A5] focus:ring-[#4258A5]/30"
               />
-              <button type="button" onClick={() => { addToList("benefits", benInput); setBenInput(""); }}
-                className="px-3 py-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition-all">
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          <Section title="Organization" />
-
-          <div>
-            <Label>Org Name</Label>
-            <input value={form.org_name} onChange={e => set("org_name", e.target.value)} className={inputCls} />
-          </div>
-          <div>
-            <Label>Org Website</Label>
-            <input value={form.org_website} onChange={e => set("org_website", e.target.value)} className={inputCls} />
-          </div>
-          <div className="md:col-span-2">
-            <Label>Logo URL</Label>
-            <input value={form.org_logo} onChange={e => set("org_logo", e.target.value)} className={inputCls} placeholder="/assets/VizServeWhite.png" />
+              <span className="text-sm text-slate-700 font-medium">Urgently Hiring</span>
+            </label>
           </div>
         </div>
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-6">
-          <button type="button" onClick={() => router.back()} className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all">
             Cancel
           </button>
           <button
@@ -322,7 +306,7 @@ export default function JobForm({ initial, jobId }: JobFormProps) {
             disabled={saving}
             className="px-7 py-2.5 rounded-xl text-white text-sm font-semibold transition-all disabled:opacity-60 shadow-sm"
             style={{ backgroundColor: '#4258A5' }}>
-            {saving ? "Saving…" : isEdit ? "Save Changes" : "Publish Job"}
+            {saving ? "Saving…" : isEdit ? "Save Changes" : "Continue"}
           </button>
         </div>
       </form>
