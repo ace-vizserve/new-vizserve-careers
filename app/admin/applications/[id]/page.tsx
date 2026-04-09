@@ -137,7 +137,6 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
             <Field label="Residential Status" value={app.residential_status} />
             <Field label="Religion"           value={app.religion} />
             <Field label="Latest Degree"      value={app.latest_degree} />
-            <Field label="National ID"        value={app.nric_fin} />
             <Field label="Passport No."       value={app.passport_no} />
             <Field label="Work Permit / Pass" value={app.work_permit_pass} />
           </div>

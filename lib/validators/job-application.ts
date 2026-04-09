@@ -138,7 +138,7 @@ export const jobApplicationSchema = z
     birth_date: requiredText("Date of birth is required"),
     gender: requiredText("Gender is required"),
     religion: requiredText("Religion is required"),
-    nricfin: z.string().trim().min(1, "National ID is required"),
+    nricfin: z.string().trim().optional().default(""),
     latest_degree: requiredText("Highest qualification is required"),
     passportno: requiredText("Passport number is required"),
     placedateofissue: requiredText("Place & date of issue is required"),

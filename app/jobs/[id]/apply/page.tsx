@@ -35,6 +35,7 @@ interface JobDetail {
   location: string;
   employment_type: string;
   description: string;
+  currency?: string;
   org_name?: string;
   org_logo?: string;
   org_website?: string;
@@ -453,6 +454,10 @@ export default function JobApplicationPage() {
         setFormFields(fields);
 
         const nextDefaults = buildDefaultValues();
+
+        if (jobData.currency) {
+          nextDefaults.expected_salary_currency = jobData.currency;
+        }
 
         fields.forEach((field) => {
           const key = getFieldKey(field);
