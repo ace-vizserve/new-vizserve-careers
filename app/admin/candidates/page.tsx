@@ -198,7 +198,11 @@ const ALL_COLUMNS: ColumnDef[] = [
     label: "Nationalities",
     render: (a) => (
       <span className="text-slate-700">
-        {a.nationalities?.length ? a.nationalities.join(", ") : "—"}
+        {a.nationalities?.length
+          ? Array.isArray(a.nationalities)
+            ? a.nationalities.join(", ")
+            : a.nationalities
+          : "—"}
       </span>
     ),
   },
