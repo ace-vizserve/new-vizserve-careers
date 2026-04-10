@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/client";
-import { Briefcase, ChevronRight, Contact, LogOut, Star, Users } from "lucide-react";
+import { Briefcase, ChevronRight, Contact, LogOut, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -38,7 +38,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/jobs",         label: "Job Postings",       Icon: Briefcase },
     { href: "/admin/applications", label: "Applications",       Icon: Users     },
     { href: "/admin/candidates",   label: "Candidates",         Icon: Contact   },
-    { href: "/admin/pooling",      label: "Pooling Candidates", Icon: Star      },
   ];
 
   return (
