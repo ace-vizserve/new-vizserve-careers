@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ChevronLeft,
   ChevronRight,
   Columns3,
   GripVertical,
@@ -65,18 +66,18 @@ interface ColumnDef {
 /* ------------------------------------------------------------------ */
 
 const STATUS_STYLES: Record<string, string> = {
-  new_candidates:        "bg-amber-50 text-amber-700 border-amber-200",
-  paper_screening:       "bg-blue-50 text-blue-700 border-blue-200",
-  for_examination:       "bg-indigo-50 text-indigo-700 border-indigo-200",
-  initial_interview:     "bg-cyan-50 text-cyan-700 border-cyan-200",
-  rc_bc:                 "bg-teal-50 text-teal-700 border-teal-200",
-  second_stage_interview:"bg-sky-50 text-sky-700 border-sky-200",
-  final_stage_interview: "bg-violet-50 text-violet-700 border-violet-200",
-  offered:               "bg-orange-50 text-orange-700 border-orange-200",
-  to_onboard:            "bg-emerald-50 text-emerald-700 border-emerald-200",
-  started:               "bg-green-50 text-green-700 border-green-200",
-  regularization:        "bg-purple-50 text-purple-700 border-purple-200",
-  dropped:               "bg-rose-50 text-rose-600 border-rose-200",
+  new_candidates:         "bg-amber-50 text-amber-700 border-amber-200",
+  paper_screening:        "bg-blue-50 text-blue-700 border-blue-200",
+  for_examination:        "bg-indigo-50 text-indigo-700 border-indigo-200",
+  initial_interview:      "bg-cyan-50 text-cyan-700 border-cyan-200",
+  rc_bc:                  "bg-teal-50 text-teal-700 border-teal-200",
+  second_stage_interview: "bg-sky-50 text-sky-700 border-sky-200",
+  final_stage_interview:  "bg-violet-50 text-violet-700 border-violet-200",
+  offered:                "bg-orange-50 text-orange-700 border-orange-200",
+  to_onboard:             "bg-emerald-50 text-emerald-700 border-emerald-200",
+  started:                "bg-green-50 text-green-700 border-green-200",
+  regularization:         "bg-purple-50 text-purple-700 border-purple-200",
+  dropped:                "bg-rose-50 text-rose-600 border-rose-200",
 };
 
 function statusLabel(s: string) {
@@ -378,9 +379,7 @@ function EditColumnsModal({
                 }}
                 className="text-xs font-medium text-blue-600 hover:text-blue-700"
               >
-                {selected.length === ALL_COLUMNS.length
-                  ? "Unselect All"
-                  : "Select All"}
+                {selected.length === ALL_COLUMNS.length ? "Unselect All" : "Select All"}
               </button>
               <span className="text-xs text-slate-400">
                 {selected.length} of {ALL_COLUMNS.length}
@@ -421,11 +420,7 @@ function EditColumnsModal({
                         const col = COLUMN_MAP.get(key);
                         if (!col) return null;
                         return (
-                          <Draggable
-                            key={key}
-                            draggableId={key}
-                            index={index}
-                          >
+                          <Draggable key={key} draggableId={key} index={index}>
                             {(prov, snapshot) => (
                               <div
                                 ref={prov.innerRef}
@@ -505,6 +500,8 @@ export default function AdminCandidatesPage() {
   const [visibleKeys, setVisibleKeys] = useState<string[]>(
     () => loadSavedColumns() ?? DEFAULT_VISIBLE_KEYS
   );
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const fetchCandidates = async () => {
     setLoading(true);
@@ -518,14 +515,15 @@ export default function AdminCandidatesPage() {
     fetchCandidates();
   }, []);
 
+  // Reset to page 1 whenever search or filters change
+  useEffect(() => {
+    setPage(1);
+  }, [search, filters]);
+
   const filtered = useMemo(() => {
     return apps.filter((a) => {
       if (filters.status && a.status !== filters.status) return false;
-      if (
-        filters.residential &&
-        a.residential_status !== filters.residential
-      )
-        return false;
+      if (filters.residential && a.residential_status !== filters.residential) return false;
       if (filters.pooled === "true" && !a.is_pooled) return false;
       if (filters.pooled === "false" && a.is_pooled) return false;
       if (search) {
@@ -541,6 +539,13 @@ export default function AdminCandidatesPage() {
     });
   }, [apps, filters, search]);
 
+  const totalPages = Math.ceil(filtered.length / pageSize);
+
+  const paginated = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
+
   const columns = useMemo(
     () => visibleKeys.map((k) => COLUMN_MAP.get(k)!).filter(Boolean),
     [visibleKeys]
@@ -553,7 +558,7 @@ export default function AdminCandidatesPage() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-8 flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -638,69 +643,117 @@ export default function AdminCandidatesPage() {
       </div>
 
       {/* Table */}
-      {loading ? (
-        <div className="flex items-center justify-center py-24">
-          <div className="w-8 h-8 border-2 border-[#4258A5] border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-24 bg-white rounded-2xl border border-slate-100">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4 border border-blue-100">
-            <Users className="w-6 h-6 text-blue-300" />
+      <div className="flex-1 min-h-0 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="w-8 h-8 border-2 border-[#4258A5] border-t-transparent rounded-full animate-spin" />
           </div>
-          <p className="text-slate-600 font-semibold">No candidates found</p>
-          <p className="text-slate-400 text-sm mt-1">
-            {search || filters.status || filters.residential || filters.pooled
-              ? "Try adjusting your search or filters"
-              : "No applications have been submitted yet"}
-          </p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-100 bg-slate-50">
-                {columns.map((col) => (
-                  <th
-                    key={col.key}
-                    className="text-left px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    {col.label}
-                  </th>
-                ))}
-                <th className="text-right px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider sticky right-0 bg-slate-50 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.08)]">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filtered.map((app) => (
-                <tr
-                  key={app.id}
-                  className="group/row hover:bg-slate-50/50 transition-colors"
-                >
+        ) : filtered.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mb-4 border border-blue-100">
+              <Users className="w-6 h-6 text-blue-300" />
+            </div>
+            <p className="text-slate-600 font-semibold">No candidates found</p>
+            <p className="text-slate-400 text-sm mt-1">
+              {search || filters.status || filters.residential || filters.pooled
+                ? "Try adjusting your search or filters"
+                : "No applications have been submitted yet"}
+            </p>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-auto">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 z-10">
+                <tr className="border-b border-slate-100 bg-slate-50">
                   {columns.map((col) => (
-                    <td
+                    <th
                       key={col.key}
-                      className="px-6 py-4 whitespace-nowrap max-w-[240px] truncate"
+                      className="text-left px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap"
                     >
-                      {col.render(app)}
-                    </td>
+                      {col.label}
+                    </th>
                   ))}
-                  <td className="px-6 py-4 sticky right-0 bg-white shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.08)] group-hover/row:bg-slate-50">
-                    <div className="flex items-center justify-end">
-                      <Link
-                        href={`/admin/applications/${app.id}`}
-                        title="View application"
-                        className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:border-[#4258A5] hover:text-[#4258A5] transition-all"
-                      >
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </div>
-                  </td>
+                  <th className="text-right px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider sticky right-0 bg-slate-50 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.08)]">
+                    Actions
+                  </th>
                 </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {paginated.map((app) => (
+                  <tr
+                    key={app.id}
+                    className="group/row hover:bg-slate-50/50 transition-colors"
+                  >
+                    {columns.map((col) => (
+                      <td
+                        key={col.key}
+                        className="px-6 py-4 whitespace-nowrap max-w-[240px] truncate"
+                      >
+                        {col.render(app)}
+                      </td>
+                    ))}
+                    <td className="px-6 py-4 sticky right-0 bg-white shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.08)] group-hover/row:bg-slate-50">
+                      <div className="flex items-center justify-end">
+                        <Link
+                          href={`/admin/applications/${app.id}`}
+                          title="View application"
+                          className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:border-[#4258A5] hover:text-[#4258A5] transition-all"
+                        >
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Pagination Bar */}
+      {!loading && filtered.length > 0 && (
+        <div className="flex items-center justify-between pt-3 pb-1 px-1">
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <span>Results per page:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1);
+              }}
+              className="px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#4258A5]/30 focus:border-[#4258A5]"
+            >
+              {[10, 25, 50, 100, 250].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
               ))}
-            </tbody>
-          </table>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-3 text-sm text-slate-500">
+            <span>
+              {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filtered.length)} of{" "}
+              {filtered.length}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:border-[#4258A5] hover:text-[#4258A5] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:border-[#4258A5] hover:text-[#4258A5] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
