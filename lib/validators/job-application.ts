@@ -5,7 +5,7 @@ const textField = z.string().trim();
 const optionalText = z.string().trim().optional().default("");
 
 const digitsOnly = /^\d+$/;
-const postalCodeRegex = /^\d{4}$/;
+const postalCodeRegex = /^\d{3,10}$/;
 const phoneRegex = /^[0-9+\-\s()]+$/;
 
 const salaryCurrencyEnum = z.enum(["SGD", "USD", "EUR", "GBP", "PHP"]);
@@ -155,7 +155,7 @@ export const jobApplicationSchema = z
       .string()
       .trim()
       .min(1, "Postal code is required")
-      .refine((v) => postalCodeRegex.test(v), "Postal code must be 4 digits"),
+      .refine((v) => postalCodeRegex.test(v), "Postal code must be 3-10 digits"),
     overseasaddress: optionalText,
     workpermitpass: z.union([z.literal(""), workPassEnum]).default(""),
 
