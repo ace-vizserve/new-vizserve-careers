@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // sharp ships a prebuilt native binary — keep it out of the Turbopack
+  // server bundle so it's `require`'d at runtime instead.
+  serverExternalPackages: ["sharp"],
   images: {
     remotePatterns: [
       {

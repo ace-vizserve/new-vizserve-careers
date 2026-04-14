@@ -25,6 +25,7 @@ import {
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { renderResumePageOneToPng } from "./lib/render-pdf-page";
 
 /* ── Types ─────────────────────────────────────────────── */
 
@@ -53,6 +54,20 @@ interface Application {
   drop_reason?: string;
   drop_details?: string;
   is_pooled?: boolean;
+  resume_url?: string | null;
+  face_image_url?: string | null;
+}
+
+/** Return up to 2 uppercase initials for the kanban avatar fallback. */
+function getInitials(name?: string): string {
+  if (!name) return "?";
+  return name
+    .trim()
+    .split(/\s+/)
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 }
 
 interface Toast {
@@ -540,6 +555,82 @@ export default function JobPipelinePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId]);
 
+  /* ── Background face detection ──────────────────────────
+     After applications load, look for any that have a resume but no
+     face_image_url yet, and ask the server to detect a face for each.
+     Runs sequentially to avoid hammering Roboflow / the PDF renderer.
+     When a face comes back, patch it into the kanban columns live. */
+  useEffect(() => {
+    const all = [
+      ...Object.values(columns).flat(),
+      ...droppedApps,
+    ];
+    const needsDetection = all.filter(
+      (a) => a.resume_url && !a.face_image_url
+    );
+    if (needsDetection.length === 0) return;
+
+    let cancelled = false;
+
+    const applyFace = (appId: number, faceUrl: string) => {
+      setColumns((prev) => {
+        const next: Record<string, Application[]> = {};
+        for (const [col, items] of Object.entries(prev)) {
+          next[col] = items.map((a) =>
+            a.id === appId ? { ...a, face_image_url: faceUrl } : a
+          );
+        }
+        return next;
+      });
+      setDroppedApps((prev) =>
+        prev.map((a) =>
+          a.id === appId ? { ...a, face_image_url: faceUrl } : a
+        )
+      );
+    };
+
+    (async () => {
+      for (const app of needsDetection) {
+        if (cancelled) return;
+        if (!app.resume_url) continue;
+        try {
+          // Render page 1 of the PDF to a PNG here in the browser. pdfjs
+          // runs natively in browsers, so this sidesteps all the Node /
+          // Turbopack / Windows pdfjs-in-server headaches.
+          const pngBlob = await renderResumePageOneToPng(app.resume_url);
+          if (cancelled) return;
+
+          const formData = new FormData();
+          formData.append("page_image", pngBlob, "page.png");
+
+          const res = await fetch(
+            `/api/applications/${app.id}/detect-face`,
+            { method: "POST", body: formData }
+          );
+          if (!res.ok) continue;
+          const data = await res.json();
+          if (!cancelled && data?.face_image_url) {
+            applyFace(app.id, data.face_image_url);
+          }
+        } catch {
+          /* silent — leaving initials is a fine fallback */
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // Only re-run when the set of ids missing a face changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    Object.values(columns)
+      .flat()
+      .filter((a) => a.resume_url && !a.face_image_url)
+      .map((a) => a.id)
+      .join(","),
+  ]);
+
   /* ── Drag handler ────────────────────────────────────── */
 
   const onDragEnd = async (result: DropResult) => {
@@ -809,6 +900,18 @@ export default function JobPipelinePage() {
                                 }`}
                               >
                                 <div className="flex items-start gap-2">
+                                  {app.face_image_url ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                      src={app.face_image_url}
+                                      alt=""
+                                      className="w-9 h-9 rounded-full object-cover flex-shrink-0 border border-slate-200"
+                                    />
+                                  ) : (
+                                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-[11px] font-semibold text-slate-500 flex-shrink-0 border border-slate-200">
+                                      {getInitials(app.full_name)}
+                                    </div>
+                                  )}
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-1">
                                       <p className="text-sm font-semibold text-slate-900 truncate flex-1">
