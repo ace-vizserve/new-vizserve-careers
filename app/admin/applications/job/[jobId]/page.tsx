@@ -905,10 +905,10 @@ export default function JobPipelinePage() {
                                     <img
                                       src={app.face_image_url}
                                       alt=""
-                                      className="w-9 h-9 rounded-full object-cover flex-shrink-0 border border-slate-200"
+                                      className="w-14 h-14 rounded-full object-cover flex-shrink-0 border border-slate-200 shadow-sm"
                                     />
                                   ) : (
-                                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-[11px] font-semibold text-slate-500 flex-shrink-0 border border-slate-200">
+                                    <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-sm font-semibold text-slate-500 flex-shrink-0 border border-slate-200 shadow-sm">
                                       {getInitials(app.full_name)}
                                     </div>
                                   )}

@@ -57,6 +57,19 @@ interface Application {
   created_at: string;
   job_portal: string;
   jobs: { position_name: string; org_name: string } | null;
+  face_image_url?: string | null;
+}
+
+/** Return up to 2 uppercase initials for the avatar fallback. */
+function getInitials(name?: string): string {
+  if (!name) return "?";
+  return name
+    .trim()
+    .split(/\s+/)
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 }
 
 interface ColumnDef {
@@ -104,9 +117,18 @@ const ALL_COLUMNS: ColumnDef[] = [
     getSortValue: (a) => a.full_name ?? "",
     render: (a) => (
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center border border-blue-100 flex-shrink-0">
-          <User className="w-3.5 h-3.5 text-blue-500" />
-        </div>
+        {a.face_image_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={a.face_image_url}
+            alt=""
+            className="w-12 h-12 rounded-full object-cover border border-slate-200 flex-shrink-0 shadow-sm"
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center border border-blue-100 flex-shrink-0 text-xs font-semibold text-blue-600">
+            {getInitials(a.full_name)}
+          </div>
+        )}
         <div>
           <p className="font-semibold text-slate-900">{a.full_name}</p>
           {a.preferred_name && <p className="text-xs text-slate-400">"{a.preferred_name}"</p>}
