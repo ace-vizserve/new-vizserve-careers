@@ -137,6 +137,7 @@ const buildDefaultValues = (): FormValues => ({
   residentialstatus: "" as never,
   nationalities: "",
   birth_date: "",
+  placeofbirth: "",
   gender: "",
   religion: "",
   nricfin: "",
@@ -257,6 +258,7 @@ export default function JobApplicationPage() {
     { id: "email", slug: "email", label: "Email", type: "char", required: true },
     { id: "phone_number", slug: "phone_number", label: "WhatsApp Number", type: "char", required: true },
     { id: "nationalities", slug: "nationalities", label: "Nationality", type: "char", required: false },
+    { id: "placeofbirth", slug: "placeofbirth", label: "Place of Birth", type: "char", required: true },
     {
       id: "linkedin",
       slug: "linkedin",
@@ -630,9 +632,6 @@ export default function JobApplicationPage() {
                 pattern="[0-9]*"
                 value={field.value}
                 onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ""))}
-                onKeyDown={(e) => {
-                  if (!/[0-9]/.test(e.key)) e.preventDefault();
-                }}
                 placeholder="e.g. 3500"
                 className={inputBase}
               />
@@ -910,7 +909,7 @@ export default function JobApplicationPage() {
                     if (/^[STFGM]?[0-9]{0,7}[A-Za-z]?$/i.test(v)) field.onChange(v);
                   }}
                   onKeyDown={(e) => {
-                    if (!/[STFGM0-9A-Za-z]/i.test(e.key)) e.preventDefault();
+                    if (e.key.length === 1 && !/[STFGM0-9A-Za-z]/i.test(e.key)) e.preventDefault();
                   }}
                   placeholder="e.g. S1234567A"
                   className={`${inputBase} uppercase tracking-widest font-mono`}
@@ -943,9 +942,6 @@ export default function JobApplicationPage() {
                 onChange={(e) => {
                   const numericValue = e.target.value.replace(/\D/g, "");
                   field.onChange(maxLength ? numericValue.slice(0, maxLength) : numericValue);
-                }}
-                onKeyDown={(e) => {
-                  if (!/[0-9]/.test(e.key)) e.preventDefault();
                 }}
                 placeholder={
                   isPostalCodeField
@@ -1003,7 +999,7 @@ export default function JobApplicationPage() {
                 value={field.value}
                 onChange={field.onChange}
                 onKeyDown={(e) => {
-                  if (!/[0-9+\- ]/.test(e.key)) e.preventDefault();
+                  if (e.key.length === 1 && !/[0-9+\- ]/.test(e.key)) e.preventDefault();
                 }}
                 placeholder="+65 9123 4567"
                 className={inputBase}
@@ -1108,6 +1104,7 @@ export default function JobApplicationPage() {
         residentialstatus: normalizedValues.residentialstatus,
         nationalities:     normalizedValues.nationalities,
         birth_date:        normalizedValues.birth_date,
+        placeofbirth:      normalizedValues.placeofbirth,
         gender:            normalizedValues.gender,
         religion:          normalizedValues.religion,
         nricfin:           normalizedValues.nricfin,
@@ -1549,6 +1546,7 @@ export default function JobApplicationPage() {
                     {renderFieldBlock(getField("residentialstatus", "Residential Status"))}
                     {renderFieldBlock(getField("nationalities", "Nationality"))}
                     {renderFieldBlock(getField("birth_date", "Date of Birth"))}
+                    {renderFieldBlock(getField("placeofbirth", "Place of Birth"))}
                     {renderFieldBlock(getField("gender", "Gender"))}
                     {renderFieldBlock(getField("religion", "Religion"))}
                     {renderFieldBlock(getField("latest_degree", "Highest Qualification"))}
@@ -1572,23 +1570,6 @@ export default function JobApplicationPage() {
                 <div className={`${cardBase} p-8`}>
                   <SectionHeader
                     number="04"
-                    title="Person to Contact in Case of Emergency"
-                    subtitle="Someone we can reach if needed"
-                  />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {renderFieldBlock(getField("name", "Emergency Contact Name"))}
-                    {renderFieldBlock(getField("relationship", "Emergency Contact Relationship"))}
-                    {renderFieldBlock(getField("address_b", "Emergency Contact Address"), "md:col-span-2")}
-                    {renderFieldBlock(getField("mobilenumber", "Emergency Contact Mobile Number"))}
-                    {renderFieldBlock(getField("hometelephonenumber", "Emergency Contact Home Telephone Number"))}
-                    {renderFieldBlock(getField("officetelephonenumber", "Emergency Contact Office Telephone Number"))}
-                    {renderFieldBlock(getField("emailaddress", "Emergency Contact Email Address"))}
-                  </div>
-                </div>
-
-                <div className={`${cardBase} p-8`}>
-                  <SectionHeader
-                    number="05"
                     title="Family Particulars"
                     subtitle="Details of immediate family members"
                   />
@@ -1658,9 +1639,6 @@ export default function JobApplicationPage() {
                                   pattern="[0-9]*"
                                   value={field.value}
                                   onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ""))}
-                                  onKeyDown={(e) => {
-                                    if (!/[0-9]/.test(e.key)) e.preventDefault();
-                                  }}
                                   className={inputBase}
                                   placeholder="e.g. 45"
                                 />
@@ -1716,7 +1694,7 @@ export default function JobApplicationPage() {
 
                 <div className={`${cardBase} p-8`}>
                   <SectionHeader
-                    number="06"
+                    number="05"
                     title="Educational Profile"
                     subtitle="Your academic background and qualifications"
                   />
@@ -1812,17 +1790,6 @@ export default function JobApplicationPage() {
                             <ErrorText path={`educations.${i}.ended_at`} />
                           </div>
 
-                          <div className="md:col-span-2">
-                            <Label>Description</Label>
-                            <textarea
-                              id={pathToFieldId(`educations.${i}.description`)}
-                              {...register(`educations.${i}.description`)}
-                              rows={3}
-                              placeholder="Achievements, honours, extracurriculars..."
-                              className={`${inputBase} resize-none`}
-                            />
-                            <ErrorText path={`educations.${i}.description`} />
-                          </div>
                         </div>
                       </div>
                     ))}
@@ -1849,7 +1816,7 @@ export default function JobApplicationPage() {
                 {getFields("coursename", "coursestartdate", "expectedyearofcompletion").length > 0 && (
                   <div className={`${cardBase} p-8`}>
                     <SectionHeader
-                      number="07"
+                      number="06"
                       title="Other Courses Currently Pursuing"
                       subtitle="Any ongoing studies or certifications"
                     />
@@ -1863,7 +1830,7 @@ export default function JobApplicationPage() {
 
                 <div className={`${cardBase} p-8`}>
                   <SectionHeader
-                    number="08"
+                    number="07"
                     title="Employment History"
                     subtitle="Your work experience, most recent first"
                   />
@@ -2041,7 +2008,7 @@ export default function JobApplicationPage() {
 
                 <div className={`${cardBase} p-8`}>
                   <SectionHeader
-                    number="09"
+                    number="08"
                     title="Additional Information"
                     subtitle="Other details relevant to your application"
                   />
@@ -2062,7 +2029,7 @@ export default function JobApplicationPage() {
 
                 <div className={`${cardBase} p-8`}>
                   <SectionHeader
-                    number="10"
+                    number="09"
                     title="Declaration"
                     subtitle="Please answer all questions honestly. All information is kept confidential."
                   />
@@ -2145,12 +2112,16 @@ export default function JobApplicationPage() {
 
                 <div id={pathToFieldId("references.root")} className={`${cardBase} p-8`}>
                   <SectionHeader
-                    number="11"
+                    number="10"
                     title="Character References"
                     subtitle="Please provide at least 3 references"
                   />
 
-                  <div className="flex items-center gap-2 mb-5 -mt-3">
+                  <div className="mb-5 -mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium">
+                    NOTE: Kindly provide the details of your character references, such as an HR representative, direct supervisor or a colleague/coworker.
+                  </div>
+
+                  <div className="flex items-center gap-2 mb-5">
                     {[0, 1, 2].map((i) => {
                       const filled =
                         watchedReferences?.[i] &&

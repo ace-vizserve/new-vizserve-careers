@@ -57,6 +57,7 @@ export async function POST(req: Request) {
         residential_status:  appData.residentialstatus   ?? "",
         nationalities:       appData.nationalities        ?? "",
         birth_date:          appData.birth_date           ?? "",
+        place_of_birth:      appData.placeofbirth         ?? "",
         gender:              appData.gender               ?? "",
         religion:            appData.religion             ?? "",
         nric_fin:            appData.nricfin              ?? "",

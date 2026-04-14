@@ -132,6 +132,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <Field label="Preferred Name"     value={app.preferred_name} />
             <Field label="Date of Birth"      value={app.birth_date} />
+            <Field label="Place of Birth"    value={app.place_of_birth} />
             <Field label="Gender"             value={app.gender} />
             <Field label="Nationality"        value={app.nationalities} />
             <Field label="Residential Status" value={app.residential_status} />
@@ -156,19 +157,6 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
             {app.is_applying_for_teacher && (
               <Field label="Preferred Subjects / Levels" value={app.preferred_subjects_levels} />
             )}
-          </div>
-        </Section>
-
-        {/* Emergency Contact */}
-        <Section title="Emergency Contact">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <Field label="Name"         value={app.emergency_name} />
-            <Field label="Relationship" value={app.emergency_relationship} />
-            <Field label="Mobile"       value={app.emergency_mobile} />
-            <Field label="Home Phone"   value={app.emergency_home_phone} />
-            <Field label="Office Phone" value={app.emergency_office_phone} />
-            <Field label="Email"        value={app.emergency_email} />
-            <Field label="Address"      value={app.emergency_address} />
           </div>
         </Section>
 

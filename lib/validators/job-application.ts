@@ -136,6 +136,7 @@ export const jobApplicationSchema = z
     residentialstatus: residentialStatusEnum,
     nationalities: requiredText("Nationality is required"),
     birth_date: requiredText("Date of birth is required"),
+    placeofbirth: requiredText("Place of birth is required"),
     gender: requiredText("Gender is required"),
     religion: requiredText("Religion is required"),
     nricfin: z.string().trim().optional().default(""),
@@ -158,26 +159,13 @@ export const jobApplicationSchema = z
     overseasaddress: optionalText,
     workpermitpass: z.union([z.literal(""), workPassEnum]).default(""),
 
-    name: requiredText("Emergency contact name is required"),
-    relationship: requiredText("Emergency contact relationship is required"),
-    address_b: requiredText("Emergency contact address is required"),
-    mobilenumber: requiredText("Emergency contact mobile number is required").refine(
-      (v) => phoneRegex.test(v),
-      "Emergency contact mobile number is invalid",
-    ),
-    hometelephonenumber: optionalText.refine(
-      (v) => !v || phoneRegex.test(v),
-      "Emergency contact home telephone number is invalid",
-    ),
-    officetelephonenumber: optionalText.refine(
-      (v) => !v || phoneRegex.test(v),
-      "Emergency contact office telephone number is invalid",
-    ),
-    emailaddress: z
-      .string()
-      .trim()
-      .min(1, "Emergency contact email is required")
-      .email("Emergency contact email is invalid"),
+    name: optionalText,
+    relationship: optionalText,
+    address_b: optionalText,
+    mobilenumber: optionalText,
+    hometelephonenumber: optionalText,
+    officetelephonenumber: optionalText,
+    emailaddress: optionalText,
 
     family_members: z.array(familyMemberSchema).min(1, "Please provide at least 1 family member"),
 
