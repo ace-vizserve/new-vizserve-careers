@@ -253,6 +253,11 @@ export default function JobApplicationPage() {
     allowedMimeTypes: ["application/pdf"],
     maxFiles: 1,
     maxFileSize: 1000 * 1000 * 5,
+    // The hook defaults upsert to true, which makes Supabase Storage check
+    // both INSERT and UPDATE policies. This bucket only has INSERT policies
+    // for anon, so upsert triggers a spurious RLS violation. The UUID path
+    // above guarantees no collision, so plain INSERT is correct here.
+    upsert: false,
   });
 
   const [declareTruth, setDeclareTruth] = useState<boolean>(false);
