@@ -102,7 +102,7 @@ export const jobApplicationSchema = z
       .string()
       .trim()
       .min(1, "Expected salary is required")
-      .refine((v) => digitsOnly.test(v), "Expected salary must contain numbers only"),
+      .refine((v) => /^[\d,]+$/.test(v), "Expected salary must contain numbers only"),
 
     expected_salary_currency: salaryCurrencyEnum.default("SGD"),
 

@@ -628,11 +628,10 @@ export default function JobApplicationPage() {
               <input
                 id={pathToFieldId("expected_salary")}
                 type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
+                inputMode="text"
                 value={field.value}
-                onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ""))}
-                placeholder="e.g. 3500"
+                onChange={(e) => field.onChange(e.target.value.replace(/[^0-9,]/g, ""))}
+                placeholder="e.g. 3,500"
                 className={inputBase}
               />
             )}

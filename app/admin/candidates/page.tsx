@@ -14,6 +14,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { industry_list } from "@/app/constants";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -236,11 +237,21 @@ const ALL_COLUMNS: ColumnDef[] = [
   {
     key: "industries",
     label: "Industries",
-    render: (a) => (
-      <span className="text-slate-700">
-        {a.industries?.length ? a.industries.join(", ") : "—"}
-      </span>
-    ),
+    render: (a) => {
+      const names = Array.isArray(a.industries)
+        ? a.industries.map((idOrName: string) => {
+            const found = industry_list.find(
+              (i) => String(i.id) === String(idOrName) || i.name === idOrName,
+            );
+            return found ? found.name : idOrName;
+          })
+        : [];
+      return (
+        <span className="text-slate-700">
+          {names.length ? names.join(", ") : "—"}
+        </span>
+      );
+    },
   },
   {
     key: "linkedin",
