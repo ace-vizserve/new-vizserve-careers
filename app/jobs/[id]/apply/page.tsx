@@ -236,8 +236,20 @@ export default function JobApplicationPage() {
   const jobId = params.id as string;
   const jobPortal = searchParams.get("job-portal");
 
+  // Each applicant gets their own folder inside candidate-resume so two
+  // applicants both uploading "Resume.pdf" don't collide on the same key
+  // (which surfaces as a misleading RLS violation on INSERT-only policies).
+  const resumeUploadPath = useRef(
+    `uploads/${
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+    }`
+  ).current;
+
   const resumeProps = useSupabaseUpload({
     bucketName: "candidate-resume",
+    path: resumeUploadPath,
     allowedMimeTypes: ["application/pdf"],
     maxFiles: 1,
     maxFileSize: 1000 * 1000 * 5,
