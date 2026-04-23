@@ -62,25 +62,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const { id } = await params;
-    const supabase = await createClient();
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    // Delete related records first, then the application
-    await supabase.from("application_family_members").delete().eq("application_id", id);
-    await supabase.from("application_educations").delete().eq("application_id", id);
-    await supabase.from("application_experiences").delete().eq("application_id", id);
-    await supabase.from("application_references").delete().eq("application_id", id);
-
-    const { error } = await supabase.from("applications").delete().eq("id", id);
-    if (error) throw error;
-
-    return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
-  }
-}
+// Hard-delete is intentionally not exposed via HTTP. Archived rows are
+// removed by the Supabase pg_cron job (cleanup_archived_applications)
+// 6 months after archived_at. Use /archive and /unarchive instead.

@@ -203,8 +203,8 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const jobId = searchParams.get("job_id");
-
     const pooled = searchParams.get("pooled");
+    const archived = searchParams.get("archived");
 
     let query = supabase
       .from("applications")
@@ -216,6 +216,13 @@ export async function GET(req: Request) {
 
     if (jobId) query = query.eq("job_id", jobId);
     if (pooled === "true") query = query.eq("is_pooled", true);
+
+    // Archive filter: default hides archived rows; ?archived=true returns only archived.
+    if (archived === "true") {
+      query = query.not("archived_at", "is", null);
+    } else {
+      query = query.is("archived_at", null);
+    }
 
     const { data, error } = await query;
     if (error) throw error;

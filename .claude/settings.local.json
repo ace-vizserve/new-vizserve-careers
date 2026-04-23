@@ -5,7 +5,8 @@
       "Bash(npx tsc:*)",
       "Bash(awk -F= '/^[A-Z]/ {print $1}' .env)",
       "Bash(npm install:*)",
-      "Bash(node -p \"require\\('./node_modules/pdfjs-dist/package.json'\\).version\")"
+      "Bash(node -p \"require\\('./node_modules/pdfjs-dist/package.json'\\).version\")",
+      "Bash(xargs grep *)"
     ]
   }
 }
