@@ -158,6 +158,7 @@ const Navbar: React.FC<NavbarProps> = ({ showBackButton = false, onBack, onSearc
           <option value="">All Types</option>
           <option value="Full-Time">Full-Time</option>
           <option value="Part-Time">Part-Time</option>
+          <option value="Contract">Contract</option>
           <option value="Freelance">Freelance</option>
           <option value="Internship">Internship</option>
         </select>
