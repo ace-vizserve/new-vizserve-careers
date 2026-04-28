@@ -20,7 +20,6 @@ import {
   RotateCcw,
   Star,
   StarOff,
-  User,
   UserX,
   X,
 } from "lucide-react";
@@ -565,7 +564,7 @@ function DroppedModal({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-xl mx-4 overflow-hidden max-h-[80vh] flex flex-col">
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-3xl mx-4 overflow-hidden max-h-[85vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center border border-orange-100">
@@ -594,9 +593,18 @@ function DroppedModal({
                   key={app.id}
                   className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors"
                 >
-                  <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
-                    <User className="w-4 h-4 text-slate-400" />
-                  </div>
+                  {app.face_image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={app.face_image_url}
+                      alt=""
+                      className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-slate-200"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-500 flex-shrink-0 border border-slate-200">
+                      {getInitials(app.full_name)}
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <Link
                       href={`/admin/applications/${app.id}`}
@@ -606,16 +614,16 @@ function DroppedModal({
                     </Link>
                     <p className="text-[11px] text-slate-400 truncate">{app.email}</p>
                     {app.drop_reason && (
-                      <div className="flex items-center gap-2 mt-1.5">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-orange-50 text-orange-600 border border-orange-200">
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-orange-50 text-orange-600 border border-orange-200 whitespace-nowrap">
                           {app.drop_reason}
                         </span>
-                        {app.drop_details && (
-                          <p className="text-[10px] text-slate-400 truncate max-w-48">
-                            {app.drop_details}
-                          </p>
-                        )}
                       </div>
+                    )}
+                    {app.drop_details && (
+                      <p className="text-[11px] text-slate-500 mt-1.5 line-clamp-2">
+                        {app.drop_details}
+                      </p>
                     )}
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -689,7 +697,7 @@ function ArchivedModal({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-xl mx-4 overflow-hidden max-h-[80vh] flex flex-col">
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-3xl mx-4 overflow-hidden max-h-[85vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-200">
@@ -720,9 +728,18 @@ function ArchivedModal({
                   key={app.id}
                   className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors"
                 >
-                  <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
-                    <User className="w-4 h-4 text-slate-400" />
-                  </div>
+                  {app.face_image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={app.face_image_url}
+                      alt=""
+                      className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-slate-200"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-500 flex-shrink-0 border border-slate-200">
+                      {getInitials(app.full_name)}
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <Link
                       href={`/admin/applications/${app.id}`}
@@ -733,12 +750,12 @@ function ArchivedModal({
                     <p className="text-[11px] text-slate-400 truncate">{app.email}</p>
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                       {app.archived_at && (
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">
                           Archived {new Date(app.archived_at).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" })}
                         </span>
                       )}
                       {app.archive_reason && (
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-50 text-slate-700 border border-slate-200">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-50 text-slate-700 border border-slate-200 whitespace-nowrap">
                           {app.archive_reason}
                         </span>
                       )}
@@ -846,6 +863,7 @@ export default function JobPipelinePage() {
     const all = [
       ...Object.values(columns).flat(),
       ...droppedApps,
+      ...archivedApps,
     ];
     const needsDetection = all.filter(
       (a) => a.resume_url && !a.face_image_url
@@ -865,6 +883,11 @@ export default function JobPipelinePage() {
         return next;
       });
       setDroppedApps((prev) =>
+        prev.map((a) =>
+          a.id === appId ? { ...a, face_image_url: faceUrl } : a
+        )
+      );
+      setArchivedApps((prev) =>
         prev.map((a) =>
           a.id === appId ? { ...a, face_image_url: faceUrl } : a
         )
@@ -906,8 +929,11 @@ export default function JobPipelinePage() {
     // Only re-run when the set of ids missing a face changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    Object.values(columns)
-      .flat()
+    [
+      ...Object.values(columns).flat(),
+      ...droppedApps,
+      ...archivedApps,
+    ]
       .filter((a) => a.resume_url && !a.face_image_url)
       .map((a) => a.id)
       .join(","),
