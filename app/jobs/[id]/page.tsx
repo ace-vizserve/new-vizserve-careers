@@ -262,56 +262,56 @@ export default async function JobDetailPage({ params }: Params) {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingJsonLd) }} />
 
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        <div className="py-16 md:py-20 relative overflow-hidden" style={{ background: 'linear-gradient(to right, #4258A5, #354683)' }}>
+      <div className="min-h-screen bg-gray-50 flex flex-col overflow-x-hidden">
+        <div className="py-12 sm:py-16 md:py-20 relative overflow-hidden" style={{ background: 'linear-gradient(to right, #4258A5, #354683)' }}>
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-10 right-10 w-72 h-72 bg-white rounded-full blur-3xl"></div>
             <div className="absolute bottom-10 left-10 w-96 h-96 bg-white rounded-full blur-3xl"></div>
           </div>
 
-          <div className="max-w-6xl mx-auto px-6 relative z-10">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
             <Link
               href="/"
-              className="text-white/80 hover:text-white mb-8 inline-flex items-center gap-2 text-base font-medium transition-colors group">
+              className="text-white/80 hover:text-white mb-6 sm:mb-8 inline-flex items-center gap-2 text-sm sm:text-base font-medium transition-colors group">
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
               Back to all jobs
             </Link>
 
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-8 leading-tight">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 sm:mb-8 leading-tight break-words">
               {job.position_name}
             </h1>
 
-            <div className="flex flex-wrap gap-4 md:gap-6">
+            <div className="flex flex-wrap gap-2 sm:gap-4 md:gap-6">
               {job.location && (
-                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2.5 rounded-lg text-white border border-white/20">
-                  <MapPin className="w-5 h-5" />
-                  <span className="font-medium">{job.location}</span>
+                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-white border border-white/20 text-sm sm:text-base">
+                  <MapPin className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                  <span className="font-medium break-words">{job.location}</span>
                 </div>
               )}
 
-              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2.5 rounded-lg text-white border border-white/20">
-                <Briefcase className="w-5 h-5" />
-                <span className="font-medium">{formatEmploymentType(job.contract_details, job.employment_type)}</span>
+              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-white border border-white/20 text-sm sm:text-base">
+                <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                <span className="font-medium break-words">{formatEmploymentType(job.contract_details, job.employment_type)}</span>
               </div>
 
               {job.company?.name && (
-                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2.5 rounded-lg text-white border border-white/20">
-                  <Building2 className="w-5 h-5" />
-                  <span className="font-medium">{job.company.name}</span>
+                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg text-white border border-white/20 text-sm sm:text-base">
+                  <Building2 className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                  <span className="font-medium break-words">{job.company.name}</span>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        <main className="flex-1 py-12 md:py-16">
-          <div className="max-w-5xl mx-auto px-6">
-            <article className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 md:p-10 mb-8">
-              <div className="flex items-center gap-3 mb-6 pb-6 border-b border-gray-200">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#E8EEF7' }}>
-                  <Briefcase className="w-5 h-5" style={{ color: '#4258A5' }} />
+        <main className="flex-1 py-8 sm:py-12 md:py-16">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6">
+            <article className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-8 md:p-10 mb-6 sm:mb-8">
+              <div className="flex items-center gap-3 mb-5 sm:mb-6 pb-5 sm:pb-6 border-b border-gray-200">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#E8EEF7' }}>
+                  <Briefcase className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: '#4258A5' }} />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900">Job Description</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Job Description</h2>
               </div>
 
               <div
@@ -320,13 +320,13 @@ export default async function JobDetailPage({ params }: Params) {
               />
             </article>
 
-            <div className="grid md:grid-cols-2 gap-6 mb-8">
-              <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#E8EEF7' }}>
-                    <Clock className="w-6 h-6" style={{ color: '#4258A5' }} />
+            <div className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+              <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 sm:p-6">
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#E8EEF7' }}>
+                    <Clock className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: '#4258A5' }} />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h2 className="font-semibold text-gray-900 mb-1">Application Process</h2>
                     <p className="text-gray-600 text-sm">
                       We review applications on a rolling basis and will contact qualified candidates within 5-7
@@ -336,12 +336,12 @@ export default async function JobDetailPage({ params }: Params) {
                 </div>
               </section>
 
-              <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#E8EEF7' }}>
-                    <CheckCircle2 className="w-6 h-6" style={{ color: '#4258A5' }} />
+              <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 sm:p-6">
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#E8EEF7' }}>
+                    <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: '#4258A5' }} />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h2 className="font-semibold text-gray-900 mb-1">What to Expect</h2>
                     <p className="text-gray-600 text-sm">
                       Our hiring process includes an initial screening, technical interview, and final conversation with
@@ -352,25 +352,25 @@ export default async function JobDetailPage({ params }: Params) {
               </section>
             </div>
 
-            <section className="text-center rounded-2xl shadow-lg p-10 md:p-12 text-white relative overflow-hidden" style={{ background: 'linear-gradient(to bottom right, #4258A5, #354683)' }}>
+            <section className="text-center rounded-2xl shadow-lg p-6 sm:p-10 md:p-12 text-white relative overflow-hidden" style={{ background: 'linear-gradient(to bottom right, #4258A5, #354683)' }}>
               <div className="absolute inset-0 opacity-10">
                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-white rounded-full blur-2xl"></div>
                 <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white rounded-full blur-2xl"></div>
               </div>
 
               <div className="relative z-10">
-                <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <Send className="w-8 h-8 text-white" />
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                  <Send className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
                 </div>
 
-                <h2 className="text-2xl md:text-3xl font-bold mb-3">Ready to Apply?</h2>
-                <p className="text-white/90 mb-8 text-lg max-w-2xl mx-auto">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3">Ready to Apply?</h2>
+                <p className="text-white/90 mb-6 sm:mb-8 text-base sm:text-lg max-w-2xl mx-auto">
                   Take the next step in your career. We&apos;re excited to learn more about you!
                 </p>
 
                 <Link
                   href={`/jobs/${job.id}/apply`}
-                  className="inline-flex items-center gap-2 px-10 py-4 bg-white font-semibold text-lg rounded-xl hover:bg-gray-50 transition-all shadow-lg hover:shadow-xl hover:scale-105"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 sm:px-10 sm:py-4 bg-white font-semibold text-base sm:text-lg rounded-xl hover:bg-gray-50 transition-all shadow-lg hover:shadow-xl hover:scale-105 w-full sm:w-auto"
                   style={{ color: '#4258A5' }}>
                   Apply for this position
                   <ArrowLeft className="w-5 h-5 rotate-180" />

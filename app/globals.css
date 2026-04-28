@@ -22,6 +22,19 @@
 .rich-text {
   line-height: 1.75;
   color: #334155;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+.rich-text img,
+.rich-text video,
+.rich-text iframe,
+.rich-text table {
+  max-width: 100%;
+  height: auto;
+}
+.rich-text pre {
+  white-space: pre-wrap;
 }
 .rich-text h1 { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 1.25rem 0 0.75rem; }
 .rich-text h2 { font-size: 1.25rem; font-weight: 700; color: #1e293b; margin: 1rem 0 0.5rem; }
