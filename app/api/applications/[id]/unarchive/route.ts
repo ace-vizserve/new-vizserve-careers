@@ -14,7 +14,7 @@ export async function POST(
 
     const { data, error } = await supabase
       .from("applications")
-      .update({ archived_at: null })
+      .update({ archived_at: null, archive_reason: null, archive_details: null })
       .eq("id", id)
       .select("id, archived_at")
       .single();

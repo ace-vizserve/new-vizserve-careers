@@ -39,7 +39,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    const allowed = ["status", "drop_reason", "drop_details", "is_pooled"];
+    const allowed = [
+      "status",
+      "drop_reason",
+      "drop_details",
+      "archive_reason",
+      "archive_details",
+      "is_pooled",
+    ];
     const update = Object.fromEntries(
       Object.entries(body).filter(([k]) => allowed.includes(k))
     );
@@ -48,7 +55,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       .from("applications")
       .update(update)
       .eq("id", id)
-      .select("id, status, drop_reason, drop_details, is_pooled")
+      .select("id, status, drop_reason, drop_details, archive_reason, archive_details, is_pooled")
       .single();
 
     if (error) {
@@ -63,5 +70,5 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 }
 
 // Hard-delete is intentionally not exposed via HTTP. Archived rows are
-// removed by the Supabase pg_cron job (cleanup_archived_applications)
-// 6 months after archived_at. Use /archive and /unarchive instead.
+// retained indefinitely; use /archive (requires a reason) and /unarchive
+// to move applications in and out of the archive.

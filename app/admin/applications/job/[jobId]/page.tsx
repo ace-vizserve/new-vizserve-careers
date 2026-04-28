@@ -16,6 +16,7 @@ import {
   Loader2,
   MapPin,
   MoreVertical,
+  Pencil,
   RotateCcw,
   Star,
   StarOff,
@@ -58,6 +59,8 @@ interface Application {
   resume_url?: string | null;
   face_image_url?: string | null;
   archived_at?: string | null;
+  archive_reason?: string | null;
+  archive_details?: string | null;
 }
 
 /** Return up to 2 uppercase initials for the kanban avatar fallback. */
@@ -119,6 +122,14 @@ const DROP_REASONS = [
   "Salary mismatch",
   "No show",
   "Failed background check",
+  "Other",
+];
+
+const ARCHIVE_REASONS = [
+  "Position no longer available",
+  "Long-term inactive candidate",
+  "Records keeping",
+  "Re-applied / superseded",
   "Other",
 ];
 
@@ -329,7 +340,7 @@ function DropModal({
   );
 }
 
-/* ── Archive Confirmation Modal ────────────────────────── */
+/* ── Archive Reason Modal ──────────────────────────────── */
 
 function ArchiveModal({
   app,
@@ -338,30 +349,67 @@ function ArchiveModal({
 }: {
   app: Application;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: (reason: string, details: string) => void;
 }) {
+  const [reason, setReason] = useState("");
+  const [details, setDetails] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const handleArchive = async () => {
+    if (!reason) return;
     setSubmitting(true);
-    await onConfirm();
+    await onConfirm(reason, details);
     setSubmitting(false);
   };
 
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
-        <div className="px-6 pt-6 pb-4">
-          <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-4 border border-slate-200">
-            <Archive className="w-5 h-5 text-slate-500" />
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-200">
+              <Archive className="w-4 h-4 text-slate-500" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Reason to archive</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Archiving {app.full_name}</p>
+            </div>
           </div>
-          <h2 className="text-lg font-bold text-slate-900 text-center">Archive Applicant</h2>
-          <p className="text-sm text-slate-500 text-center mt-2">
-            Move <span className="font-semibold text-slate-700">{app.full_name}</span> to the archive?
-            You can restore them later from the Archive tab. If not restored, the record is
-            automatically deleted after 6 months — allowing the applicant to re-apply.
-          </p>
+          <button onClick={onClose} className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 transition-all">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+              Select the archive reason
+            </label>
+            <select
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#4258A5]/30 focus:border-[#4258A5] transition-all"
+            >
+              <option value="">Select the archive reason</option>
+              {ARCHIVE_REASONS.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+              Comment (Optional)
+            </label>
+            <textarea
+              value={details}
+              onChange={(e) => setDetails(e.target.value)}
+              placeholder="Add a comment explaining why this candidate is being archived (Optional)"
+              rows={5}
+              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#4258A5]/30 focus:border-[#4258A5] transition-all resize-none"
+            />
+          </div>
         </div>
 
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/50">
@@ -373,10 +421,121 @@ function ArchiveModal({
           </button>
           <button
             onClick={handleArchive}
-            disabled={submitting}
+            disabled={!reason || submitting}
             className="px-5 py-2 text-sm font-semibold text-white bg-slate-700 rounded-xl hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {submitting ? "Archiving..." : "Archive"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Edit Reason Modal (shared by Drop + Archive) ──────── */
+
+function EditReasonModal({
+  app,
+  kind,
+  initialReason,
+  initialDetails,
+  onClose,
+  onConfirm,
+}: {
+  app: Application;
+  kind: "drop" | "archive";
+  initialReason: string;
+  initialDetails: string;
+  onClose: () => void;
+  onConfirm: (reason: string, details: string) => void;
+}) {
+  const [reason, setReason] = useState(initialReason);
+  const [details, setDetails] = useState(initialDetails);
+  const [submitting, setSubmitting] = useState(false);
+
+  const isArchive = kind === "archive";
+  const reasons = isArchive ? ARCHIVE_REASONS : DROP_REASONS;
+  const accent = isArchive ? "bg-slate-700 hover:bg-slate-800" : "bg-rose-500 hover:bg-rose-600";
+  const Icon = isArchive ? Archive : AlertCircle;
+  const title = isArchive ? "Edit archive reason" : "Edit drop reason";
+  const reasonLabel = isArchive ? "Archive reason" : "Drop reason";
+
+  // If the existing reason isn't in the canonical list (legacy / freeform),
+  // surface it as a selectable option so the editor doesn't lose it.
+  const reasonOptions = reasons.includes(initialReason) || !initialReason
+    ? reasons
+    : [initialReason, ...reasons];
+
+  const handleSave = async () => {
+    if (!reason) return;
+    setSubmitting(true);
+    await onConfirm(reason, details);
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[160] flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-200">
+              <Icon className="w-4 h-4 text-slate-500" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Updating {app.full_name}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 transition-all">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+              {reasonLabel}
+            </label>
+            <select
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#4258A5]/30 focus:border-[#4258A5] transition-all"
+            >
+              <option value="">Select a reason</option>
+              {reasonOptions.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+              Comment (Optional)
+            </label>
+            <textarea
+              value={details}
+              onChange={(e) => setDetails(e.target.value)}
+              placeholder="Add or update the comment (Optional)"
+              rows={5}
+              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#4258A5]/30 focus:border-[#4258A5] transition-all resize-none"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={!reason || submitting}
+            className={`px-5 py-2 text-sm font-semibold text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all ${accent}`}
+          >
+            {submitting ? "Saving..." : "Save"}
           </button>
         </div>
       </div>
@@ -393,6 +552,7 @@ function DroppedModal({
   onPool,
   onUnpool,
   onArchive,
+  onEdit,
 }: {
   apps: Application[];
   onClose: () => void;
@@ -400,6 +560,7 @@ function DroppedModal({
   onPool: (app: Application) => void;
   onUnpool: (app: Application) => void;
   onArchive: (app: Application) => void;
+  onEdit: (app: Application) => void;
 }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
@@ -459,6 +620,14 @@ function DroppedModal({
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     <button
+                      onClick={() => onEdit(app)}
+                      title="Edit drop reason"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:border-[#4258A5] hover:text-[#4258A5] hover:bg-blue-50/50 transition-all"
+                    >
+                      <Pencil className="w-3 h-3" />
+                      Edit
+                    </button>
+                    <button
                       onClick={() => onRestore(app)}
                       title="Restore to pipeline"
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:border-[#4258A5] hover:text-[#4258A5] hover:bg-blue-50/50 transition-all"
@@ -510,19 +679,13 @@ function ArchivedModal({
   apps,
   onClose,
   onUnarchive,
+  onEdit,
 }: {
   apps: Application[];
   onClose: () => void;
   onUnarchive: (app: Application) => void;
+  onEdit: (app: Application) => void;
 }) {
-  const daysLeft = (archivedAt?: string | null) => {
-    if (!archivedAt) return null;
-    const archived = new Date(archivedAt).getTime();
-    const cutoff = archived + 1000 * 60 * 60 * 24 * 30 * 6; // ~6 months
-    const remaining = Math.ceil((cutoff - Date.now()) / (1000 * 60 * 60 * 24));
-    return Math.max(remaining, 0);
-  };
-
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
@@ -535,7 +698,7 @@ function ArchivedModal({
             <div>
               <h2 className="text-lg font-bold text-slate-900">Archived Applicants</h2>
               <p className="text-xs text-slate-400">
-                {apps.length} archived · auto-deleted after 6 months
+                {apps.length} archived
               </p>
             </div>
           </div>
@@ -552,50 +715,60 @@ function ArchivedModal({
             </div>
           ) : (
             <div className="divide-y divide-slate-100">
-              {apps.map((app) => {
-                const days = daysLeft(app.archived_at);
-                return (
-                  <div
-                    key={app.id}
-                    className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors"
-                  >
-                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
-                      <User className="w-4 h-4 text-slate-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <Link
-                        href={`/admin/applications/${app.id}`}
-                        className="text-sm font-semibold text-slate-800 hover:text-[#4258A5] transition-colors"
-                      >
-                        {app.full_name}
-                      </Link>
-                      <p className="text-[11px] text-slate-400 truncate">{app.email}</p>
-                      <div className="flex items-center gap-2 mt-1.5">
-                        {app.archived_at && (
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-                            Archived {new Date(app.archived_at).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" })}
-                          </span>
-                        )}
-                        {days !== null && (
-                          <span className="text-[10px] text-slate-400">
-                            Deletes in {days} day{days !== 1 ? "s" : ""}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <button
-                        onClick={() => onUnarchive(app)}
-                        title="Restore from archive"
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:border-[#4258A5] hover:text-[#4258A5] hover:bg-blue-50/50 transition-all"
-                      >
-                        <ArchiveRestore className="w-3 h-3" />
-                        Unarchive
-                      </button>
-                    </div>
+              {apps.map((app) => (
+                <div
+                  key={app.id}
+                  className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors"
+                >
+                  <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
+                    <User className="w-4 h-4 text-slate-400" />
                   </div>
-                );
-              })}
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      href={`/admin/applications/${app.id}`}
+                      className="text-sm font-semibold text-slate-800 hover:text-[#4258A5] transition-colors"
+                    >
+                      {app.full_name}
+                    </Link>
+                    <p className="text-[11px] text-slate-400 truncate">{app.email}</p>
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      {app.archived_at && (
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                          Archived {new Date(app.archived_at).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" })}
+                        </span>
+                      )}
+                      {app.archive_reason && (
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-50 text-slate-700 border border-slate-200">
+                          {app.archive_reason}
+                        </span>
+                      )}
+                    </div>
+                    {app.archive_details && (
+                      <p className="text-[11px] text-slate-500 mt-1.5 line-clamp-2">
+                        {app.archive_details}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <button
+                      onClick={() => onEdit(app)}
+                      title="Edit archive reason"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:border-[#4258A5] hover:text-[#4258A5] hover:bg-blue-50/50 transition-all"
+                    >
+                      <Pencil className="w-3 h-3" />
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => onUnarchive(app)}
+                      title="Restore from archive"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:border-[#4258A5] hover:text-[#4258A5] hover:bg-blue-50/50 transition-all"
+                    >
+                      <ArchiveRestore className="w-3 h-3" />
+                      Unarchive
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -618,6 +791,7 @@ export default function JobPipelinePage() {
   // Modal states
   const [dropTarget, setDropTarget] = useState<Application | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<Application | null>(null);
+  const [editTarget, setEditTarget] = useState<{ app: Application; kind: "drop" | "archive" } | null>(null);
   const [showDroppedModal, setShowDroppedModal] = useState(false);
   const [showArchivedModal, setShowArchivedModal] = useState(false);
 
@@ -803,15 +977,23 @@ export default function JobPipelinePage() {
     await reload();
   };
 
-  const handleArchive = async () => {
+  const handleArchive = async (reason: string, details: string) => {
     if (!archiveTarget) return;
     const loadingId = addToast(`Archiving ${archiveTarget.full_name}...`, "loading");
 
-    const res = await fetch(`/api/applications/${archiveTarget.id}/archive`, { method: "POST" });
+    const res = await fetch(`/api/applications/${archiveTarget.id}/archive`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        archive_reason: reason,
+        archive_details: details,
+      }),
+    });
     removeToast(loadingId);
 
     if (!res.ok) {
-      addToast("Failed to archive applicant", "error");
+      const err = await res.json().catch(() => ({}));
+      addToast(`Failed to archive: ${err.error ?? "Unknown error"}`, "error");
       return;
     }
 
@@ -873,6 +1055,34 @@ export default function JobPipelinePage() {
     });
     removeToast(loadingId);
     addToast(`${app.full_name} restored to pipeline`, "success");
+    await reload();
+  };
+
+  const handleEditReason = async (reason: string, details: string) => {
+    if (!editTarget) return;
+    const { app, kind } = editTarget;
+    const loadingId = addToast(`Updating ${app.full_name}...`, "loading");
+
+    const payload =
+      kind === "archive"
+        ? { archive_reason: reason, archive_details: details || null }
+        : { drop_reason: reason, drop_details: details || null };
+
+    const res = await fetch(`/api/applications/${app.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    removeToast(loadingId);
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      addToast(`Failed to update: ${err.error ?? "Unknown error"}`, "error");
+      return;
+    }
+
+    setEditTarget(null);
+    addToast(`${app.full_name} updated`, "success");
     await reload();
   };
 
@@ -1127,6 +1337,7 @@ export default function JobPipelinePage() {
           onPool={handlePool}
           onUnpool={handleUnpool}
           onArchive={(app) => setArchiveTarget(app)}
+          onEdit={(app) => setEditTarget({ app, kind: "drop" })}
         />
       )}
 
@@ -1135,6 +1346,26 @@ export default function JobPipelinePage() {
           apps={archivedApps}
           onClose={() => setShowArchivedModal(false)}
           onUnarchive={handleUnarchive}
+          onEdit={(app) => setEditTarget({ app, kind: "archive" })}
+        />
+      )}
+
+      {editTarget && (
+        <EditReasonModal
+          app={editTarget.app}
+          kind={editTarget.kind}
+          initialReason={
+            editTarget.kind === "archive"
+              ? editTarget.app.archive_reason ?? ""
+              : editTarget.app.drop_reason ?? ""
+          }
+          initialDetails={
+            editTarget.kind === "archive"
+              ? editTarget.app.archive_details ?? ""
+              : editTarget.app.drop_details ?? ""
+          }
+          onClose={() => setEditTarget(null)}
+          onConfirm={handleEditReason}
         />
       )}
 
