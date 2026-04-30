@@ -1,9 +1,10 @@
 import { createClient } from "@/lib/server";
+import { createAdminClient } from "@/lib/server-admin";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const formData = await req.formData();
 
     const rawData = formData.get("application_data");

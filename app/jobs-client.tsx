@@ -181,16 +181,16 @@ export default function JobsClient({ initialJobs }: { initialJobs: Job[] }) {
         .job-card-active { box-shadow: 0 0 0 2px #4258A5; }
       `}</style>
 
-      <div className="h-dvh flex flex-col overflow-hidden">
+      <div className="min-h-dvh flex flex-col md:h-dvh md:overflow-hidden">
         <div className="fixed top-0 left-0 right-0 z-50 h-1" style={{ background: 'linear-gradient(to right, #4258A5, #4258A5, #4258A5)' }} />
 
         <div className="flex-shrink-0">
           <Navbar onSearch={setSearchQuery} onFilterChange={setFilters} />
         </div>
 
-        <div className="flex-1 min-h-0 w-full max-w-[1800px] mx-auto md:flex p-5 sm:p-7 md:space-x-5 overflow-hidden">
+        <div className="flex-1 min-h-0 w-full max-w-[1800px] mx-auto md:flex p-5 sm:p-7 md:space-x-5 md:overflow-hidden">
           <div
-            className={`${showDetails ? "hidden md:flex" : "flex"} flex-col w-full md:w-[42%] min-h-0 bg-white border-r border-slate-100 rounded-2xl overflow-hidden`}>
+            className={`${showDetails ? "hidden md:flex" : "flex"} flex-col w-full md:w-[42%] min-h-0 bg-white border-r border-slate-100 rounded-2xl md:overflow-hidden`}>
             <div className="flex-shrink-0 px-6 py-4 border-b border-slate-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -281,7 +281,7 @@ export default function JobsClient({ initialJobs }: { initialJobs: Job[] }) {
           </div>
 
           <div
-            className={`${showDetails ? "flex" : "hidden md:flex"} flex-col flex-1 min-h-0 bg-slate-50 overflow-hidden`}>
+            className={`${showDetails ? "flex" : "hidden md:flex"} flex-col flex-1 min-h-0 bg-slate-50 md:overflow-hidden`}>
             <div className="flex-1 overflow-y-auto scrollbar-hide">
               <div className="space-y-6 p-1">
                 {selectedJob ? (
