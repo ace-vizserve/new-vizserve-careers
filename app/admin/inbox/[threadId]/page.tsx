@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { ArrowLeft, FileText, Send } from "lucide-react";
 import Link from "next/link";
@@ -47,6 +48,8 @@ export default function ThreadPage() {
   const [replyHtml, setReplyHtml] = useState("");
   const [signaturePrefill, setSignaturePrefill] = useState("");
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(null);
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -60,13 +63,22 @@ export default function ThreadPage() {
     })();
   }, []);
 
-  const applyTemplate = (templateId: string) => {
-    if (!templateId) return;
+  const applyTemplateNow = (templateId: string) => {
     const tpl = templates.find((t) => t.id === templateId);
     if (!tpl) return;
-    if (!htmlIsEmpty(replyHtml) && !confirm("Replace the current reply with this template?")) return;
     const tplHtml = tpl.body_html ?? plainTextToHtml(tpl.body);
     setReplyHtml(signaturePrefill ? `${tplHtml}${signaturePrefill}` : tplHtml);
+    setActiveTemplateId(templateId);
+  };
+
+  const requestApplyTemplate = (templateId: string) => {
+    if (!templateId) return;
+    // If reply is empty (or only the signature prefill is there), apply directly.
+    if (htmlIsEmpty(replyHtml) || replyHtml === signaturePrefill) {
+      applyTemplateNow(templateId);
+      return;
+    }
+    setPendingTemplateId(templateId);
   };
 
   // Load active signature once and prefill the reply box.
@@ -140,6 +152,7 @@ export default function ThreadPage() {
       }
       // Reset the reply box but keep the signature prefilled for the next message.
       setReplyHtml(signaturePrefill);
+      setActiveTemplateId(null);
       sileo.success({ title: "Reply sent" });
       await load();
     } finally {
@@ -186,7 +199,7 @@ export default function ThreadPage() {
             <FileText className="w-4 h-4 text-slate-400" />
             <select
               onChange={(e) => {
-                applyTemplate(e.target.value);
+                requestApplyTemplate(e.target.value);
                 e.target.value = "";
               }}
               defaultValue=""
@@ -240,6 +253,24 @@ export default function ThreadPage() {
           </button>
         </div>
       </footer>
+
+      <ConfirmDialog
+        open={pendingTemplateId !== null}
+        title="Replace current reply?"
+        description={
+          <TemplateSwitchDescription
+            currentName={templates.find((t) => t.id === activeTemplateId)?.name ?? null}
+            newName={templates.find((t) => t.id === pendingTemplateId)?.name ?? "(unknown)"}
+          />
+        }
+        confirmLabel="Use template"
+        cancelLabel="Keep my reply"
+        onConfirm={() => {
+          if (pendingTemplateId) applyTemplateNow(pendingTemplateId);
+          setPendingTemplateId(null);
+        }}
+        onCancel={() => setPendingTemplateId(null)}
+      />
     </div>
   );
 }
@@ -309,6 +340,37 @@ function plainTextToHtml(text: string): string {
     .split("\n")
     .map((l) => `<p>${l.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") || "<br>"}</p>`)
     .join("");
+}
+
+function TemplateSwitchDescription({
+  currentName,
+  newName,
+}: {
+  currentName: string | null;
+  newName: string;
+}) {
+  return (
+    <div>
+      <p className="mb-3">Your current reply will be replaced. Confirm the switch:</p>
+      <div className="flex items-stretch gap-2 text-xs">
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-slate-400 uppercase tracking-wide mb-1">From</p>
+          <div className="px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 break-words">
+            <span className="text-slate-700">
+              {currentName ?? <em className="text-slate-500">Custom message</em>}
+            </span>
+          </div>
+        </div>
+        <span className="self-center text-slate-300 text-base">→</span>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-slate-400 uppercase tracking-wide mb-1">To</p>
+          <div className="px-3 py-2 rounded-lg border break-words" style={{ backgroundColor: "#4258A511", borderColor: "#4258A540" }}>
+            <span className="text-slate-900 font-medium">{newName}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function initials(label: string): string {

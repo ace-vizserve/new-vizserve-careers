@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { ArrowLeft, FileText, Save, Send } from "lucide-react";
 import Link from "next/link";
@@ -30,6 +31,8 @@ export default function ComposePage() {
   const [applicationId, setApplicationId] = useState<string>(applicationIdParam);
   const [draftId, setDraftId] = useState<string | null>(draftIdParam || null);
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(null);
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
 
@@ -72,13 +75,21 @@ export default function ComposePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const applyTemplate = (templateId: string) => {
-    if (!templateId) return;
+  const applyTemplateNow = (templateId: string) => {
     const tpl = templates.find((t) => t.id === templateId);
     if (!tpl) return;
-    if (!htmlIsEmpty(bodyHtml) && !confirm("Replace the current message with this template?")) return;
     if (tpl.subject) setSubject(tpl.subject);
     setBodyHtml(tpl.body_html ?? plainTextToHtml(tpl.body));
+    setActiveTemplateId(templateId);
+  };
+
+  const requestApplyTemplate = (templateId: string) => {
+    if (!templateId) return;
+    if (htmlIsEmpty(bodyHtml)) {
+      applyTemplateNow(templateId);
+      return;
+    }
+    setPendingTemplateId(templateId);
   };
 
   const handleSaveDraft = async () => {
@@ -165,7 +176,7 @@ export default function ComposePage() {
             <FileText className="w-4 h-4 text-slate-400" />
             <select
               onChange={(e) => {
-                applyTemplate(e.target.value);
+                requestApplyTemplate(e.target.value);
                 e.target.value = "";
               }}
               defaultValue=""
@@ -241,6 +252,24 @@ export default function ComposePage() {
           </button>
         </div>
       </footer>
+
+      <ConfirmDialog
+        open={pendingTemplateId !== null}
+        title="Replace current message?"
+        description={
+          <TemplateSwitchDescription
+            currentName={templates.find((t) => t.id === activeTemplateId)?.name ?? null}
+            newName={templates.find((t) => t.id === pendingTemplateId)?.name ?? "(unknown)"}
+          />
+        }
+        confirmLabel="Use template"
+        cancelLabel="Keep my message"
+        onConfirm={() => {
+          if (pendingTemplateId) applyTemplateNow(pendingTemplateId);
+          setPendingTemplateId(null);
+        }}
+        onCancel={() => setPendingTemplateId(null)}
+      />
     </div>
   );
 }
@@ -278,4 +307,35 @@ function htmlToPlainText(html: string): string {
   const div = document.createElement("div");
   div.innerHTML = html;
   return (div.textContent ?? div.innerText ?? "").trim();
+}
+
+function TemplateSwitchDescription({
+  currentName,
+  newName,
+}: {
+  currentName: string | null;
+  newName: string;
+}) {
+  return (
+    <div>
+      <p className="mb-3">Your current message will be replaced. Confirm the switch:</p>
+      <div className="flex items-stretch gap-2 text-xs">
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-slate-400 uppercase tracking-wide mb-1">From</p>
+          <div className="px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 break-words">
+            <span className="text-slate-700">
+              {currentName ?? <em className="text-slate-500">Custom message</em>}
+            </span>
+          </div>
+        </div>
+        <span className="self-center text-slate-300 text-base">→</span>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-slate-400 uppercase tracking-wide mb-1">To</p>
+          <div className="px-3 py-2 rounded-lg border break-words" style={{ backgroundColor: "#4258A511", borderColor: "#4258A540" }}>
+            <span className="text-slate-900 font-medium">{newName}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
