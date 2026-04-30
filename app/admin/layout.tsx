@@ -42,7 +42,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="min-h-screen flex bg-slate-50" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="h-screen flex bg-slate-50" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {/* Sidebar */}
       <aside className="w-60 flex-shrink-0 bg-white border-r border-slate-100 flex flex-col">
         <div className="p-6 border-b border-slate-100">

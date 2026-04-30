@@ -28,7 +28,7 @@ export default function InboxLayout({ children }: { children: React.ReactNode })
     exact ? pathname === href : pathname.startsWith(href);
 
   return (
-    <div className="flex h-full min-h-screen bg-slate-50">
+    <div className="flex h-full bg-slate-50">
       <aside className="w-60 flex-shrink-0 bg-white border-r border-slate-100 flex flex-col">
         <div className="px-4 pt-6 pb-4 border-b border-slate-100">
           <h2 className="text-lg font-bold text-slate-900 px-2">Inbox</h2>
