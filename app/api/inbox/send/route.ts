@@ -12,16 +12,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { to, subject, body, applicationId } = await req.json();
+    // Accepts either { body } (legacy plain text) or { bodyHtml } (rich text).
+    const { to, subject, body, bodyHtml, applicationId } = await req.json();
 
-    if (!to?.trim() || !subject?.trim() || !body?.trim()) {
+    const html: string | null = typeof bodyHtml === "string" && bodyHtml.trim() ? bodyHtml : null;
+    const text: string = (typeof body === "string" && body) || htmlToPlainText(html ?? "");
+
+    if (!to?.trim() || !subject?.trim() || (!html && !text.trim())) {
       return NextResponse.json(
         { error: "to, subject, and body are required" },
         { status: 400 },
       );
     }
 
-    await sendMail({ to, subject, body });
+    // Signature is prefilled into the body by the compose/reply UI,
+    // so the user sees + edits before sending. Send body as-is.
+    const admin = createAdminClient();
+    await sendMail({
+      to,
+      subject,
+      body: html ?? text,
+      contentType: html ? "HTML" : "Text",
+    });
 
     // Log the outbound message into the thread for this candidate.
     const sentAt = new Date().toISOString();
@@ -32,14 +44,14 @@ export async function POST(req: Request) {
       applicationId: applicationId ? Number(applicationId) : null,
     });
 
-    const admin = createAdminClient();
     await admin.from("inbox_messages").insert({
       thread_id: thread.id,
       direction: "outbound",
       from_address: process.env.SMTP_USER,
       to_address: to,
       subject,
-      body_text: body,
+      body_text: text,
+      body_html: html,
       sent_by_user_id: user.id,
       is_read: true,
       created_at: sentAt,
@@ -58,4 +70,18 @@ export async function POST(req: Request) {
       { status: 500 },
     );
   }
+}
+
+function htmlToPlainText(html: string): string {
+  if (!html) return "";
+  return html
+    .replace(/<\s*br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|h[1-6]|li)>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }

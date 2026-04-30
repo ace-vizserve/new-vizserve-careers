@@ -4,6 +4,7 @@ import {
   FileClock,
   FileText,
   Inbox,
+  PenLine,
   Plus,
   Send,
 } from "lucide-react";
@@ -22,6 +23,7 @@ export default function InboxLayout({ children }: { children: React.ReactNode })
   // Email Integrations is hidden — page still exists at /admin/inbox/integrations.
   const secondary = [
     { href: "/admin/inbox/templates", label: "Manage Templates", Icon: FileText },
+    { href: "/admin/inbox/signature", label: "Signature",        Icon: PenLine  },
   ];
 
   const isActive = (href: string, exact: boolean) =>

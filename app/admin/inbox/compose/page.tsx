@@ -1,9 +1,10 @@
 "use client";
 
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { ArrowLeft, Send } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { sileo } from "sileo";
 
 export default function ComposePage() {
@@ -16,8 +17,28 @@ export default function ComposePage() {
 
   const [to, setTo] = useState(initialTo);
   const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
+  const [bodyHtml, setBodyHtml] = useState("");
   const [sending, setSending] = useState(false);
+
+  // Prefill the body with the active signature so the user can edit before sending.
+  useEffect(() => {
+    (async () => {
+      const res = await fetch("/api/inbox/signatures/active");
+      if (!res.ok) return;
+      const data = await res.json();
+      const sigHtml = (data.signature?.body_html ?? "").trim();
+      const sigText = (data.signature?.body ?? "").trim();
+      if (sigHtml) {
+        setBodyHtml(`<p></p>${sigHtml}`);
+      } else if (sigText) {
+        const escaped = sigText
+          .split("\n")
+          .map((l: string) => `<p>${l || "<br>"}</p>`)
+          .join("");
+        setBodyHtml(`<p></p>${escaped}`);
+      }
+    })();
+  }, []);
 
   const handleSend = async () => {
     if (!to.trim()) {
@@ -28,7 +49,9 @@ export default function ComposePage() {
       sileo.error({ title: "Subject is required" });
       return;
     }
-    if (!body.trim()) {
+    if (!htmlIsEmpty(bodyHtml)) {
+      // Body has content — proceed.
+    } else {
       sileo.error({ title: "Message body is required" });
       return;
     }
@@ -38,7 +61,7 @@ export default function ComposePage() {
       const res = await fetch("/api/inbox/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to, subject, body, applicationId }),
+        body: JSON.stringify({ to, subject, bodyHtml, applicationId }),
       });
 
       const result = await res.json().catch(() => ({}));
@@ -106,12 +129,11 @@ export default function ComposePage() {
           </Field>
 
           <Field label="Message">
-            <textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
+            <RichTextEditor
+              value={bodyHtml}
+              onChange={setBodyHtml}
               placeholder="Write your message..."
-              rows={14}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4258A5]/20 focus:border-[#4258A5] resize-y"
+              minHeight="280px"
             />
           </Field>
         </div>
@@ -145,4 +167,14 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </div>
   );
+}
+
+function htmlIsEmpty(html: string): boolean {
+  if (!html) return true;
+  // Strip tags + whitespace + non-breaking spaces; if nothing's left, it's empty.
+  const stripped = html
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .trim();
+  return stripped.length === 0;
 }

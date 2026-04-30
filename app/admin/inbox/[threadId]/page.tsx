@@ -1,5 +1,6 @@
 "use client";
 
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { ArrowLeft, Send } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -35,9 +36,35 @@ export default function ThreadPage() {
   const [thread, setThread] = useState<Thread | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
-  const [reply, setReply] = useState("");
+  const [replyHtml, setReplyHtml] = useState("");
+  const [signaturePrefill, setSignaturePrefill] = useState("");
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Load active signature once and prefill the reply box.
+  useEffect(() => {
+    (async () => {
+      const res = await fetch("/api/inbox/signatures/active");
+      if (!res.ok) return;
+      const data = await res.json();
+      const sigHtml = (data.signature?.body_html ?? "").trim();
+      const sigText = (data.signature?.body ?? "").trim();
+      let prefill = "";
+      if (sigHtml) {
+        prefill = `<p></p>${sigHtml}`;
+      } else if (sigText) {
+        const escaped = sigText
+          .split("\n")
+          .map((l: string) => `<p>${l || "<br>"}</p>`)
+          .join("");
+        prefill = `<p></p>${escaped}`;
+      }
+      if (prefill) {
+        setSignaturePrefill(prefill);
+        setReplyHtml(prefill);
+      }
+    })();
+  }, []);
 
   const load = async () => {
     const res = await fetch(`/api/inbox/threads/${threadId}`);
@@ -61,7 +88,8 @@ export default function ThreadPage() {
   }, [messages]);
 
   const handleReply = async () => {
-    if (!reply.trim() || !thread) return;
+    if (!thread) return;
+    if (htmlIsEmpty(replyHtml)) return;
     setSending(true);
     try {
       const res = await fetch("/api/inbox/send", {
@@ -70,7 +98,7 @@ export default function ThreadPage() {
         body: JSON.stringify({
           to: thread.participant_email,
           subject: thread.subject?.startsWith("Re:") ? thread.subject : `Re: ${thread.subject || "(no subject)"}`,
-          body: reply,
+          bodyHtml: replyHtml,
           applicationId: thread.application_id,
         }),
       });
@@ -82,7 +110,8 @@ export default function ThreadPage() {
         });
         return;
       }
-      setReply("");
+      // Reset the reply box but keep the signature prefilled for the next message.
+      setReplyHtml(signaturePrefill);
       sileo.success({ title: "Reply sent" });
       await load();
     } finally {
@@ -141,21 +170,22 @@ export default function ThreadPage() {
         )}
       </div>
 
-      <footer className="flex-shrink-0 border-t border-slate-100 bg-white p-4">
-        <div className="flex items-end gap-2">
-          <textarea
-            value={reply}
-            onChange={(e) => setReply(e.target.value)}
+      <footer className="flex-shrink-0 border-t border-slate-100 bg-white px-4 py-3">
+        <div className="max-h-72 overflow-y-auto">
+          <RichTextEditor
+            value={replyHtml}
+            onChange={setReplyHtml}
             placeholder={`Reply to ${displayName}...`}
-            rows={3}
-            className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4258A5]/20 focus:border-[#4258A5] resize-none"
+            minHeight="80px"
           />
+        </div>
+        <div className="mt-2 flex items-center justify-end">
           <button
             onClick={handleReply}
-            disabled={sending || !reply.trim()}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-sm transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed self-stretch"
+            disabled={sending || htmlIsEmpty(replyHtml)}
+            className="inline-flex items-center gap-2 px-4 py-1.5 text-sm font-semibold text-white rounded-lg shadow-sm transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ backgroundColor: "#4258A5" }}>
-            <Send className="w-4 h-4" />
+            <Send className="w-3.5 h-3.5" />
             {sending ? "Sending..." : "Send"}
           </button>
         </div>
@@ -200,11 +230,27 @@ function MessageRow({ message }: { message: Message }) {
           </p>
         </div>
       </header>
-      <div className="text-sm text-slate-700 whitespace-pre-wrap break-words leading-relaxed pl-12">
-        {message.body_text?.trim() || "(no body)"}
-      </div>
+      {message.body_html ? (
+        <div
+          className="rich-text text-sm break-words pl-12 [&_img]:my-2 [&_img]:max-h-32"
+          dangerouslySetInnerHTML={{ __html: message.body_html }}
+        />
+      ) : (
+        <div className="text-sm text-slate-700 whitespace-pre-wrap break-words leading-relaxed pl-12">
+          {message.body_text?.trim() || "(no body)"}
+        </div>
+      )}
     </article>
   );
+}
+
+function htmlIsEmpty(html: string): boolean {
+  if (!html) return true;
+  const stripped = html
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .trim();
+  return stripped.length === 0;
 }
 
 function initials(label: string): string {
