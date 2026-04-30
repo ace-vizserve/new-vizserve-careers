@@ -1095,11 +1095,14 @@ export default function JobPipelinePage() {
     await reload();
   };
 
-  // Phase 1: opens the OS mail client with the candidate pre-filled.
-  // Phase 2 swap: navigate to /admin/inbox/compose?to=...&applicationId=...
   const handleSendEmail = (app: Application) => {
     if (!app.email) return;
-    window.location.href = `mailto:${app.email}`;
+    const params = new URLSearchParams({
+      to: app.email,
+      applicationId: String(app.id),
+      name: app.full_name ?? "",
+    });
+    router.push(`/admin/inbox/compose?${params.toString()}`);
   };
 
   const handleEditReason = async (reason: string, details: string) => {

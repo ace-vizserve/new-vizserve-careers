@@ -6,7 +6,6 @@ import {
   Inbox,
   Plus,
   Send,
-  Settings,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -20,9 +19,9 @@ export default function InboxLayout({ children }: { children: React.ReactNode })
     { href: "/admin/inbox/drafts", label: "Drafts", Icon: FileClock, exact: false },
   ];
 
+  // Email Integrations is hidden — page still exists at /admin/inbox/integrations.
   const secondary = [
-    { href: "/admin/inbox/templates",    label: "Manage Templates",  Icon: FileText },
-    { href: "/admin/inbox/integrations", label: "Email Integrations", Icon: Settings },
+    { href: "/admin/inbox/templates", label: "Manage Templates", Icon: FileText },
   ];
 
   const isActive = (href: string, exact: boolean) =>
@@ -64,7 +63,7 @@ export default function InboxLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-100 space-y-1">
+        <div className={`p-4 space-y-1 ${secondary.length > 0 ? "border-t border-slate-100" : ""}`}>
           {secondary.map(({ href, label, Icon }) => {
             const active = isActive(href, false);
             return (
