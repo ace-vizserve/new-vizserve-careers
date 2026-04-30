@@ -1,11 +1,19 @@
 "use client";
 
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, FileText, Save, Send } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { sileo } from "sileo";
+
+interface Template {
+  id: string;
+  name: string;
+  subject: string;
+  body: string;
+  body_html: string | null;
+}
 
 export default function ComposePage() {
   const router = useRouter();
@@ -13,16 +21,43 @@ export default function ComposePage() {
 
   const initialTo = searchParams.get("to") ?? "";
   const initialName = searchParams.get("name") ?? "";
-  const applicationId = searchParams.get("applicationId") ?? "";
+  const applicationIdParam = searchParams.get("applicationId") ?? "";
+  const draftIdParam = searchParams.get("draftId") ?? "";
 
   const [to, setTo] = useState(initialTo);
   const [subject, setSubject] = useState("");
   const [bodyHtml, setBodyHtml] = useState("");
+  const [applicationId, setApplicationId] = useState<string>(applicationIdParam);
+  const [draftId, setDraftId] = useState<string | null>(draftIdParam || null);
+  const [templates, setTemplates] = useState<Template[]>([]);
   const [sending, setSending] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
 
-  // Prefill the body with the active signature so the user can edit before sending.
+  // Load templates list (for the picker dropdown).
   useEffect(() => {
     (async () => {
+      const res = await fetch("/api/inbox/templates");
+      if (!res.ok) return;
+      const data = await res.json();
+      setTemplates(data.templates ?? []);
+    })();
+  }, []);
+
+  // Initial setup: either load a draft (if ?draftId=) or prefill the active signature.
+  useEffect(() => {
+    (async () => {
+      if (draftIdParam) {
+        const res = await fetch(`/api/inbox/drafts/${draftIdParam}`);
+        if (res.ok) {
+          const { draft } = await res.json();
+          setTo(draft.to_address ?? "");
+          setSubject(draft.subject ?? "");
+          setBodyHtml(draft.body_html ?? plainTextToHtml(draft.body ?? ""));
+          setApplicationId(draft.application_id ? String(draft.application_id) : "");
+          return;
+        }
+      }
+      // No draft → prefill with active signature.
       const res = await fetch("/api/inbox/signatures/active");
       if (!res.ok) return;
       const data = await res.json();
@@ -31,30 +66,48 @@ export default function ComposePage() {
       if (sigHtml) {
         setBodyHtml(`<p></p>${sigHtml}`);
       } else if (sigText) {
-        const escaped = sigText
-          .split("\n")
-          .map((l: string) => `<p>${l || "<br>"}</p>`)
-          .join("");
-        setBodyHtml(`<p></p>${escaped}`);
+        setBodyHtml(`<p></p>${plainTextToHtml(sigText)}`);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const applyTemplate = (templateId: string) => {
+    if (!templateId) return;
+    const tpl = templates.find((t) => t.id === templateId);
+    if (!tpl) return;
+    if (!htmlIsEmpty(bodyHtml) && !confirm("Replace the current message with this template?")) return;
+    if (tpl.subject) setSubject(tpl.subject);
+    setBodyHtml(tpl.body_html ?? plainTextToHtml(tpl.body));
+  };
+
+  const handleSaveDraft = async () => {
+    setSavingDraft(true);
+    try {
+      const payload = { to, subject, body: htmlToPlainText(bodyHtml), bodyHtml, applicationId };
+      const url = draftId ? `/api/inbox/drafts/${draftId}` : "/api/inbox/drafts";
+      const method = draftId ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        sileo.error({ title: data.error ?? "Failed to save draft" });
+        return;
+      }
+      if (!draftId && data.id) setDraftId(data.id);
+      sileo.success({ title: "Draft saved" });
+    } finally {
+      setSavingDraft(false);
+    }
+  };
+
   const handleSend = async () => {
-    if (!to.trim()) {
-      sileo.error({ title: "Recipient is required" });
-      return;
-    }
-    if (!subject.trim()) {
-      sileo.error({ title: "Subject is required" });
-      return;
-    }
-    if (!htmlIsEmpty(bodyHtml)) {
-      // Body has content — proceed.
-    } else {
-      sileo.error({ title: "Message body is required" });
-      return;
-    }
+    if (!to.trim()) return sileo.error({ title: "Recipient is required" });
+    if (!subject.trim()) return sileo.error({ title: "Subject is required" });
+    if (htmlIsEmpty(bodyHtml)) return sileo.error({ title: "Message body is required" });
 
     setSending(true);
     try {
@@ -63,9 +116,7 @@ export default function ComposePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ to, subject, bodyHtml, applicationId }),
       });
-
       const result = await res.json().catch(() => ({}));
-
       if (!res.ok) {
         sileo.error({
           title: result.error ?? "Failed to send email",
@@ -74,13 +125,15 @@ export default function ComposePage() {
         return;
       }
 
+      // Successfully sent — drop any existing draft.
+      if (draftId) {
+        await fetch(`/api/inbox/drafts/${draftId}`, { method: "DELETE" });
+      }
+
       sileo.success({ title: "Email sent" });
       router.push("/admin/inbox");
     } catch (err: any) {
-      sileo.error({
-        title: "Failed to send email",
-        description: err.message,
-      });
+      sileo.error({ title: "Failed to send email", description: err.message });
     } finally {
       setSending(false);
     }
@@ -95,15 +148,39 @@ export default function ComposePage() {
           aria-label="Back to inbox">
           <ArrowLeft className="w-4 h-4" />
         </Link>
-        <div className="flex-1">
-          <h1 className="text-base font-semibold text-slate-900">New Message</h1>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-base font-semibold text-slate-900">
+            {draftId ? "Continue draft" : "New Message"}
+          </h1>
           {initialName && (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 truncate">
               Replying to {initialName}
               {applicationId && <span className="text-slate-400"> · application #{applicationId}</span>}
             </p>
           )}
         </div>
+
+        {templates.length > 0 && (
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4 text-slate-400" />
+            <select
+              onChange={(e) => {
+                applyTemplate(e.target.value);
+                e.target.value = "";
+              }}
+              defaultValue=""
+              className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#4258A5]/20 focus:border-[#4258A5]">
+              <option value="" disabled>
+                Use a template…
+              </option>
+              {templates.map((tpl) => (
+                <option key={tpl.id} value={tpl.id}>
+                  {tpl.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </header>
 
       <div className="flex-1 overflow-y-auto">
@@ -139,20 +216,30 @@ export default function ComposePage() {
         </div>
       </div>
 
-      <footer className="flex-shrink-0 border-t border-slate-100 px-6 py-4 flex items-center justify-end gap-2">
-        <Link
-          href="/admin/inbox"
-          className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors">
-          Cancel
-        </Link>
+      <footer className="flex-shrink-0 border-t border-slate-100 px-6 py-4 flex items-center justify-between gap-2">
         <button
-          onClick={handleSend}
-          disabled={sending}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-sm transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ backgroundColor: "#4258A5" }}>
-          <Send className="w-4 h-4" />
-          {sending ? "Sending..." : "Send"}
+          onClick={handleSaveDraft}
+          disabled={savingDraft}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50">
+          <Save className="w-3.5 h-3.5" />
+          {savingDraft ? "Saving..." : draftId ? "Update draft" : "Save draft"}
         </button>
+
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/inbox"
+            className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors">
+            Cancel
+          </Link>
+          <button
+            onClick={handleSend}
+            disabled={sending}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-lg shadow-sm transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ backgroundColor: "#4258A5" }}>
+            <Send className="w-4 h-4" />
+            {sending ? "Sending..." : "Send"}
+          </button>
+        </div>
       </footer>
     </div>
   );
@@ -171,10 +258,24 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function htmlIsEmpty(html: string): boolean {
   if (!html) return true;
-  // Strip tags + whitespace + non-breaking spaces; if nothing's left, it's empty.
-  const stripped = html
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .trim();
+  const stripped = html.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").trim();
   return stripped.length === 0;
+}
+
+function plainTextToHtml(text: string): string {
+  if (!text) return "";
+  return text
+    .split("\n")
+    .map((l) => `<p>${l.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") || "<br>"}</p>`)
+    .join("");
+}
+
+function htmlToPlainText(html: string): string {
+  if (!html) return "";
+  if (typeof window === "undefined") {
+    return html.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+  }
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return (div.textContent ?? div.innerText ?? "").trim();
 }

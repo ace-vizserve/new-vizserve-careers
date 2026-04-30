@@ -1,11 +1,19 @@
 "use client";
 
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, FileText, Send } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { sileo } from "sileo";
+
+interface Template {
+  id: string;
+  name: string;
+  subject: string;
+  body: string;
+  body_html: string | null;
+}
 
 interface Message {
   id: string;
@@ -38,8 +46,28 @@ export default function ThreadPage() {
   const [loading, setLoading] = useState(true);
   const [replyHtml, setReplyHtml] = useState("");
   const [signaturePrefill, setSignaturePrefill] = useState("");
+  const [templates, setTemplates] = useState<Template[]>([]);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Load shared templates for the dropdown.
+  useEffect(() => {
+    (async () => {
+      const res = await fetch("/api/inbox/templates");
+      if (!res.ok) return;
+      const data = await res.json();
+      setTemplates(data.templates ?? []);
+    })();
+  }, []);
+
+  const applyTemplate = (templateId: string) => {
+    if (!templateId) return;
+    const tpl = templates.find((t) => t.id === templateId);
+    if (!tpl) return;
+    if (!htmlIsEmpty(replyHtml) && !confirm("Replace the current reply with this template?")) return;
+    const tplHtml = tpl.body_html ?? plainTextToHtml(tpl.body);
+    setReplyHtml(signaturePrefill ? `${tplHtml}${signaturePrefill}` : tplHtml);
+  };
 
   // Load active signature once and prefill the reply box.
   useEffect(() => {
@@ -152,6 +180,28 @@ export default function ThreadPage() {
             )}
           </p>
         </div>
+
+        {templates.length > 0 && (
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4 text-slate-400" />
+            <select
+              onChange={(e) => {
+                applyTemplate(e.target.value);
+                e.target.value = "";
+              }}
+              defaultValue=""
+              className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#4258A5]/20 focus:border-[#4258A5]">
+              <option value="" disabled>
+                Use a template…
+              </option>
+              {templates.map((tpl) => (
+                <option key={tpl.id} value={tpl.id}>
+                  {tpl.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </header>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto bg-slate-50">
@@ -251,6 +301,14 @@ function htmlIsEmpty(html: string): boolean {
     .replace(/&nbsp;/g, " ")
     .trim();
   return stripped.length === 0;
+}
+
+function plainTextToHtml(text: string): string {
+  if (!text) return "";
+  return text
+    .split("\n")
+    .map((l) => `<p>${l.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") || "<br>"}</p>`)
+    .join("");
 }
 
 function initials(label: string): string {
