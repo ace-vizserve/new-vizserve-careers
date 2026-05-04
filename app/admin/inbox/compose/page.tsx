@@ -28,11 +28,13 @@ export default function ComposePage() {
   const [to, setTo] = useState(initialTo);
   const [subject, setSubject] = useState("");
   const [bodyHtml, setBodyHtml] = useState("");
+  const [signatureHtml, setSignatureHtml] = useState("");
   const [applicationId, setApplicationId] = useState<string>(applicationIdParam);
   const [draftId, setDraftId] = useState<string | null>(draftIdParam || null);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(null);
   const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
+  const [userTouched, setUserTouched] = useState(false);
   const [sending, setSending] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
 
@@ -57,6 +59,7 @@ export default function ComposePage() {
           setSubject(draft.subject ?? "");
           setBodyHtml(draft.body_html ?? plainTextToHtml(draft.body ?? ""));
           setApplicationId(draft.application_id ? String(draft.application_id) : "");
+          setUserTouched(true);
           return;
         }
       }
@@ -66,10 +69,10 @@ export default function ComposePage() {
       const data = await res.json();
       const sigHtml = (data.signature?.body_html ?? "").trim();
       const sigText = (data.signature?.body ?? "").trim();
-      if (sigHtml) {
-        setBodyHtml(`<p></p>${sigHtml}`);
-      } else if (sigText) {
-        setBodyHtml(`<p></p>${plainTextToHtml(sigText)}`);
+      const resolvedSig = sigHtml || (sigText ? plainTextToHtml(sigText) : "");
+      if (resolvedSig) {
+        setSignatureHtml(resolvedSig);
+        setBodyHtml(`<p></p>${resolvedSig}`);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -79,13 +82,15 @@ export default function ComposePage() {
     const tpl = templates.find((t) => t.id === templateId);
     if (!tpl) return;
     if (tpl.subject) setSubject(tpl.subject);
-    setBodyHtml(tpl.body_html ?? plainTextToHtml(tpl.body));
+    const tplHtml = tpl.body_html ?? plainTextToHtml(tpl.body);
+    setBodyHtml(signatureHtml ? `${tplHtml}<p></p>${signatureHtml}` : tplHtml);
     setActiveTemplateId(templateId);
+    setUserTouched(false);
   };
 
   const requestApplyTemplate = (templateId: string) => {
     if (!templateId) return;
-    if (htmlIsEmpty(bodyHtml)) {
+    if (!userTouched && !activeTemplateId) {
       applyTemplateNow(templateId);
       return;
     }
@@ -219,7 +224,10 @@ export default function ComposePage() {
           <Field label="Message">
             <RichTextEditor
               value={bodyHtml}
-              onChange={setBodyHtml}
+              onChange={(html) => {
+                setBodyHtml(html);
+                setUserTouched(true);
+              }}
               placeholder="Write your message..."
               minHeight="280px"
             />
