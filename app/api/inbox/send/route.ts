@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/server";
 import { createAdminClient } from "@/lib/server-admin";
-import { findOrCreateThread } from "@/lib/imap";
+import { findOrCreateThread, currentMailboxAddress } from "@/lib/imap";
 import { sendMail } from "@/lib/mailer";
 import { NextResponse } from "next/server";
 
@@ -55,6 +55,7 @@ export async function POST(req: Request) {
       sent_by_user_id: user.id,
       is_read: true,
       created_at: sentAt,
+      mailbox_address: currentMailboxAddress(),
     });
 
     await admin

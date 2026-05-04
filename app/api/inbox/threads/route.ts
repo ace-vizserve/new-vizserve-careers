@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/server";
 import { createAdminClient } from "@/lib/server-admin";
+import { currentMailboxAddress } from "@/lib/imap";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
@@ -20,6 +21,7 @@ export async function GET(req: Request) {
     const { data, error, count } = await admin
       .from("inbox_threads")
       .select("id, application_id, participant_email, subject, last_message_at, unread_count", { count: "exact" })
+      .eq("mailbox_address", currentMailboxAddress())
       .order("last_message_at", { ascending: false })
       .range(from, to);
 

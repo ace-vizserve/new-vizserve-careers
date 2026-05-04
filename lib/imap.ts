@@ -25,13 +25,18 @@ interface SyncResult {
 }
 
 /**
- * Connects to IMAP, fetches recent INBOX messages, and stores any
- * new ones in the database. Returns counts for visibility.
+ * Returns the mailbox this server is currently configured to sync from.
+ * Every thread/message we persist is tagged with this so swapping
+ * SMTP_USER hides the previous mailbox's data without destroying it.
  */
-export async function syncInbox(limit = 50): Promise<SyncResult> {
-  const result: SyncResult = { fetched: 0, inserted: 0, skipped: 0, errors: [] };
+export function currentMailboxAddress(): string {
+  const addr = process.env.SMTP_USER?.toLowerCase().trim();
+  if (!addr) throw new Error("SMTP_USER is not configured");
+  return addr;
+}
 
-  const client = new ImapFlow({
+function imapClient(): ImapFlow {
+  return new ImapFlow({
     host: process.env.IMAP_HOST!,
     port: Number(process.env.IMAP_PORT ?? 993),
     secure: true,
@@ -41,6 +46,41 @@ export async function syncInbox(limit = 50): Promise<SyncResult> {
     },
     logger: false,
   });
+}
+
+/**
+ * Appends a raw RFC822 message to the IMAP "Sent" folder so it shows
+ * up in Outlook (or any other IMAP client) as a normal sent message.
+ * SMTP alone won't put a copy there — the server has no idea what
+ * folder the sender wants. Folder name is auto-detected via the
+ * `\Sent` special-use flag, with sensible fallbacks for providers
+ * that don't advertise it.
+ */
+export async function appendToSentFolder(rawMessage: Buffer): Promise<void> {
+  const client = imapClient();
+  await client.connect();
+  try {
+    const mailboxes = await client.list();
+    const fallbackNames = new Set(["Sent", "Sent Items", "INBOX.Sent"]);
+    const sentPath =
+      mailboxes.find((m) => m.specialUse === "\\Sent")?.path
+      ?? mailboxes.find((m) => fallbackNames.has(m.path))?.path;
+    if (!sentPath) throw new Error("No Sent folder found on IMAP server");
+
+    await client.append(sentPath, rawMessage, ["\\Seen"]);
+  } finally {
+    await client.logout();
+  }
+}
+
+/**
+ * Connects to IMAP, fetches recent INBOX messages, and stores any
+ * new ones in the database. Returns counts for visibility.
+ */
+export async function syncInbox(limit = 50): Promise<SyncResult> {
+  const result: SyncResult = { fetched: 0, inserted: 0, skipped: 0, errors: [] };
+
+  const client = imapClient();
 
   await client.connect();
   const lock = await client.getMailboxLock("INBOX");
@@ -79,6 +119,7 @@ export async function syncInbox(limit = 50): Promise<SyncResult> {
  */
 async function persistInboundMessage(parsed: ParsedMail): Promise<boolean> {
   const supabase = createAdminClient();
+  const mailbox = currentMailboxAddress();
 
   const fromAddress =
     parsed.from?.value[0]?.address?.toLowerCase().trim() ?? "";
@@ -95,12 +136,14 @@ async function persistInboundMessage(parsed: ParsedMail): Promise<boolean> {
   const bodyHtml = parsed.html === false ? null : (parsed.html ?? null);
   const receivedAt = parsed.date?.toISOString() ?? new Date().toISOString();
 
-  // Dedup by Message-ID — skip if already stored.
+  // Dedup by Message-ID *within this mailbox* — same Message-ID landing
+  // in a different mailbox is a legitimately separate row.
   if (messageId) {
     const { data: existing } = await supabase
       .from("inbox_messages")
       .select("id")
       .eq("external_id", messageId)
+      .eq("mailbox_address", mailbox)
       .maybeSingle();
     if (existing) return false;
   }
@@ -123,6 +166,7 @@ async function persistInboundMessage(parsed: ParsedMail): Promise<boolean> {
     external_id: messageId,
     is_read: false,
     created_at: receivedAt,
+    mailbox_address: mailbox,
   });
   if (error) throw new Error(`message insert: ${error.message}`);
 
@@ -156,11 +200,13 @@ export async function findOrCreateThread(opts: {
 }): Promise<ThreadRow> {
   const supabase = createAdminClient();
   const email = opts.participantEmail.toLowerCase().trim();
+  const mailbox = currentMailboxAddress();
 
   const { data: existing } = await supabase
     .from("inbox_threads")
     .select("id, application_id, unread_count")
     .eq("participant_email", email)
+    .eq("mailbox_address", mailbox)
     .order("last_message_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -188,6 +234,7 @@ export async function findOrCreateThread(opts: {
       subject: opts.subject,
       last_message_at: opts.lastMessageAt,
       unread_count: 0,
+      mailbox_address: mailbox,
     })
     .select("id, application_id, unread_count")
     .single();

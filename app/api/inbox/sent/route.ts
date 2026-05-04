@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/server";
 import { createAdminClient } from "@/lib/server-admin";
+import { currentMailboxAddress } from "@/lib/imap";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -15,6 +16,7 @@ export async function GET() {
       .from("inbox_messages")
       .select("id, thread_id, to_address, subject, body_text, created_at")
       .eq("direction", "outbound")
+      .eq("mailbox_address", currentMailboxAddress())
       .order("created_at", { ascending: false })
       .limit(200);
 

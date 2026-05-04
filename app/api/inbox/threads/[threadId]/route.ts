@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/server";
 import { createAdminClient } from "@/lib/server-admin";
+import { currentMailboxAddress } from "@/lib/imap";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -28,6 +29,7 @@ export async function GET(
         applications ( id, full_name, email )
       `)
       .eq("id", threadId)
+      .eq("mailbox_address", currentMailboxAddress())
       .single();
 
     if (tErr || !thread) {
