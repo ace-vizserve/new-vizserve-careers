@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/client";
-import { Briefcase, ChevronRight, Contact, LogOut, Users } from "lucide-react";
+import { Briefcase, ChevronRight, Contact, LogOut, Mail, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -38,10 +38,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/jobs",         label: "Job Postings",       Icon: Briefcase },
     { href: "/admin/applications", label: "Applications",       Icon: Users     },
     { href: "/admin/candidates",   label: "Candidates",         Icon: Contact   },
+    { href: "/admin/inbox",        label: "Inbox",              Icon: Mail      },
   ];
 
   return (
-    <div className="min-h-screen flex bg-slate-50" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="h-screen flex bg-slate-50" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {/* Sidebar */}
       <aside className="w-60 flex-shrink-0 bg-white border-r border-slate-100 flex flex-col">
         <div className="p-6 border-b border-slate-100">

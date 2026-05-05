@@ -14,6 +14,7 @@ import {
   Briefcase,
   Check,
   Loader2,
+  Mail,
   MapPin,
   MoreVertical,
   Pencil,
@@ -186,12 +187,14 @@ function CardMenu({
   onArchive,
   onPool,
   onUnpool,
+  onSendEmail,
 }: {
   app: Application;
   onDrop: (app: Application) => void;
   onArchive: (app: Application) => void;
   onPool: (app: Application) => void;
   onUnpool: (app: Application) => void;
+  onSendEmail: (app: Application) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -231,6 +234,14 @@ function CardMenu({
               Add to Pooling
             </button>
           )}
+          <button
+            disabled={!app.email}
+            onClick={(e) => { e.stopPropagation(); setOpen(false); onSendEmail(app); }}
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Mail className="w-3.5 h-3.5 text-[#4258A5]" />
+            Send Email
+          </button>
           <button
             onClick={(e) => { e.stopPropagation(); setOpen(false); onDrop(app); }}
             className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
@@ -1084,6 +1095,16 @@ export default function JobPipelinePage() {
     await reload();
   };
 
+  const handleSendEmail = (app: Application) => {
+    if (!app.email) return;
+    const params = new URLSearchParams({
+      to: app.email,
+      applicationId: String(app.id),
+      name: app.full_name ?? "",
+    });
+    router.push(`/admin/inbox/compose?${params.toString()}`);
+  };
+
   const handleEditReason = async (reason: string, details: string) => {
     if (!editTarget) return;
     const { app, kind } = editTarget;
@@ -1321,6 +1342,7 @@ export default function JobPipelinePage() {
                                     onArchive={(a) => setArchiveTarget(a)}
                                     onPool={handlePool}
                                     onUnpool={handleUnpool}
+                                    onSendEmail={handleSendEmail}
                                   />
                                 </div>
                               </div>
