@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL;
+  const webhookUrl = process.env.POWER_AUTOMATE_WEBHOOK_URL;
   if (!webhookUrl) {
     return NextResponse.json(
-      { error: "n8n webhook URL is not configured" },
+      { error: "Webhook URL is not configured" },
       { status: 500 },
     );
   }
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     const text = await res.text();
     if (!res.ok) {
       return NextResponse.json(
-        { error: `n8n responded ${res.status}: ${text || res.statusText}` },
+        { error: `Webhook responded ${res.status}: ${text || res.statusText}` },
         { status: 502 },
       );
     }
