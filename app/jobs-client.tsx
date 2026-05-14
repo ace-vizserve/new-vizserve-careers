@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { ConsentPopup } from "@/components/ui/consent-popup";
 import Navbar from "./components/navbar";
 import PopupModal from "./components/ui/PopupModal";
 
@@ -169,6 +170,8 @@ export default function JobsClient({ initialJobs }: { initialJobs: Job[] }) {
 
   return (
     <>
+      <ConsentPopup />
+
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
         * { font-family: 'DM Sans', sans-serif; }
