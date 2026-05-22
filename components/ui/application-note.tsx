@@ -22,9 +22,9 @@ export const ApplicationNote = () => (
         <p className="text-sm text-slate-700">
           For assistance, please contact{" "}
           <a
-            href="mailto:kurtsteven.arciga@vizseve.com"
+            href="mailto:recruitment@viszerve.com"
             className="text-blue-600 hover:text-blue-700 font-medium hover:underline transition-colors">
-            kurtsteven.arciga@vizseve.com
+            recruitment@viszerve.com
           </a>
         </p>
       </div>
