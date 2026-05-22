@@ -2,7 +2,7 @@
 
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
-import { ArrowLeft, FileText, Send } from "lucide-react";
+import { ArrowLeft, ChevronDown, FileText, Send } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -44,6 +44,7 @@ export default function ThreadPage() {
 
   const [thread, setThread] = useState<Thread | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [replyHtml, setReplyHtml] = useState("");
   const [signaturePrefill, setSignaturePrefill] = useState("");
@@ -114,8 +115,21 @@ export default function ThreadPage() {
       return;
     }
     const data = await res.json();
+    const loadedMessages: Message[] = data.messages ?? [];
     setThread(data.thread);
-    setMessages(data.messages ?? []);
+    setMessages(loadedMessages);
+    // Gmail-style: collapse the conversation, expand only the latest message.
+    const last = loadedMessages[loadedMessages.length - 1];
+    setExpandedIds(last ? new Set([last.id]) : new Set());
+  };
+
+  const toggleMessage = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -223,13 +237,16 @@ export default function ThreadPage() {
             <p className="text-sm text-slate-400">No messages yet.</p>
           </div>
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <div className="mx-auto max-w-8xl px-9 py-5 space-y-2">
             {messages.map((msg) => (
-              <li key={msg.id}>
-                <MessageRow message={msg} />
-              </li>
+              <MessageCard
+                key={msg.id}
+                message={msg}
+                expanded={expandedIds.has(msg.id)}
+                onToggle={() => toggleMessage(msg.id)}
+              />
             ))}
-          </ul>
+          </div>
         )}
       </div>
 
@@ -275,54 +292,119 @@ export default function ThreadPage() {
   );
 }
 
-function MessageRow({ message }: { message: Message }) {
+function MessageCard({
+  message,
+  expanded,
+  onToggle,
+}: {
+  message: Message;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
   const isOutbound = message.direction === "outbound";
   const senderLabel = isOutbound ? "You" : message.from_address;
-  const time = new Date(message.created_at).toLocaleString([], {
+  const fullTime = new Date(message.created_at).toLocaleString([], {
     year: "numeric",
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
   });
+  const shortTime = formatShortTime(message.created_at);
+  const snippet = messageSnippet(message);
 
   return (
-    <article className="bg-white px-6 py-5 hover:bg-slate-50/40 transition-colors">
-      <header className="flex items-start gap-3 mb-3">
+    <article
+      className={`rounded-xl border bg-white transition-shadow ${
+        expanded ? "border-slate-200 shadow-sm" : "border-slate-200/70"
+      }`}>
+      {/* Header — always visible, click to expand/collapse */}
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50/60 rounded-xl transition-colors">
         <div
           className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold text-white"
           style={{ backgroundColor: isOutbound ? "#4258A5" : "#94a3b8" }}>
           {initials(senderLabel)}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-baseline justify-between gap-2">
-            <p className="text-sm font-semibold text-slate-900 truncate">
-              {senderLabel}
-              {isOutbound && (
-                <span className="ml-2 text-[10px] font-bold uppercase tracking-wide text-white px-1.5 py-0.5 rounded" style={{ backgroundColor: "#4258A5" }}>
-                  Sent
-                </span>
-              )}
-            </p>
-            <span className="flex-shrink-0 text-xs text-slate-400">{time}</span>
+          <div className="flex items-baseline gap-2">
+            <p className="text-sm font-semibold text-slate-900 truncate">{senderLabel}</p>
+            {isOutbound && (
+              <span
+                className="flex-shrink-0 text-[10px] font-bold uppercase tracking-wide text-white px-1.5 py-0.5 rounded"
+                style={{ backgroundColor: "#4258A5" }}>
+                Sent
+              </span>
+            )}
           </div>
-          <p className="text-xs text-slate-500 truncate mt-0.5">
-            To: {message.to_address}
-          </p>
+          {expanded ? (
+            <p className="text-xs text-slate-500 truncate mt-0.5">to {message.to_address}</p>
+          ) : (
+            <p className="text-xs text-slate-500 truncate mt-0.5">{snippet}</p>
+          )}
         </div>
-      </header>
-      {message.body_html ? (
-        <div
-          className="rich-text text-sm break-words pl-12 [&_img]:my-2 [&_img]:max-h-32"
-          dangerouslySetInnerHTML={{ __html: message.body_html }}
-        />
-      ) : (
-        <div className="text-sm text-slate-700 whitespace-pre-wrap break-words leading-relaxed pl-12">
-          {message.body_text?.trim() || "(no body)"}
+        <div className="flex-shrink-0 flex items-center gap-2 self-start pt-0.5">
+          <span className="text-xs text-slate-400">{expanded ? fullTime : shortTime}</span>
+          <ChevronDown
+            className={`w-4 h-4 text-slate-400 transition-transform ${expanded ? "rotate-180" : ""}`}
+          />
+        </div>
+      </button>
+
+      {/* Body — only when expanded */}
+      {expanded && (
+        <div className="px-4 pb-4 pt-1 border-t border-slate-100">
+          {message.body_html ? (
+            <div
+              className="rich-text text-sm break-words pt-3 [&_img]:my-2 [&_img]:max-h-32"
+              dangerouslySetInnerHTML={{ __html: message.body_html }}
+            />
+          ) : (
+            <div className="text-sm text-slate-700 whitespace-pre-wrap break-words leading-relaxed pt-3">
+              {message.body_text?.trim() || "(no body)"}
+            </div>
+          )}
         </div>
       )}
     </article>
   );
+}
+
+function formatShortTime(iso: string): string {
+  const date = new Date(iso);
+  const now = new Date();
+  const sameDay = date.toDateString() === now.toDateString();
+  if (sameDay) {
+    return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+  const sameYear = date.getFullYear() === now.getFullYear();
+  return date.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+    ...(sameYear ? {} : { year: "numeric" }),
+  });
+}
+
+function messageSnippet(message: Message): string {
+  const raw = message.body_html
+    ? message.body_html
+        // Drop <style>/<script> blocks entirely so their CSS/JS doesn't leak into the preview.
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, " ")
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, " ")
+        .replace(/<!--[\s\S]*?-->/g, " ")
+        .replace(/<[^>]+>/g, " ")
+    : message.body_text ?? "";
+  const text = raw
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text) return "(no body)";
+  return text.length > 120 ? `${text.slice(0, 120)}…` : text;
 }
 
 function htmlIsEmpty(html: string): boolean {
