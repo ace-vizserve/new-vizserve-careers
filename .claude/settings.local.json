@@ -9,7 +9,9 @@
       "Bash(xargs grep *)",
       "PowerShell(npx tsc --noEmit 2>&1)",
       "Bash(rm db/accounts.sql)",
-      "Bash(rmdir db *)"
+      "Bash(rmdir db *)",
+      "Bash(rm components/GuestNotes.tsx)",
+      "Bash(rm -r app/api/guest)"
     ]
   }
 }
