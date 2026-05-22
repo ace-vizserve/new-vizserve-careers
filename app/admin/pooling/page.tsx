@@ -1,6 +1,7 @@
 "use client";
 
-import { Briefcase, ChevronRight, Search, Star, StarOff, User } from "lucide-react";
+import { ShareToGuestButton } from "@/components/ShareToGuestButton";
+import { ChevronRight, Search, Star, StarOff, User } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -149,6 +150,7 @@ export default function AdminPoolingPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
+                      <ShareToGuestButton applicationId={app.id} variant="icon" />
                       <button
                         onClick={() => removeFromPool(app.id)}
                         title="Remove from pool"

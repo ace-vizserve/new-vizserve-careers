@@ -17,7 +17,7 @@ export default function AdminLoginPage() {
     setError("");
 
     const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const { data: signInData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
     if (authError) {
       setError("Invalid email or password.");
@@ -25,7 +25,20 @@ export default function AdminLoginPage() {
       return;
     }
 
-    router.push("/admin/jobs");
+    // Superadmins go to account management; HR goes to the recruiting pages.
+    let destination = "/admin/jobs";
+    const userId = signInData.user?.id;
+    if (userId) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (profile?.role === "superadmin") destination = "/admin/accounts";
+      else if (profile?.role === "guest") destination = "/admin/shared";
+    }
+
+    router.push(destination);
   };
 
   const inputCls =
