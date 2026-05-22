@@ -35,7 +35,7 @@ export default function AdminLoginPage() {
         .eq("user_id", userId)
         .maybeSingle();
       if (profile?.role === "superadmin") destination = "/admin/accounts";
-      else if (profile?.role === "guest") destination = "/admin/shared";
+      else if (profile?.role === "guest") destination = "/admin/applications";
     }
 
     router.push(destination);

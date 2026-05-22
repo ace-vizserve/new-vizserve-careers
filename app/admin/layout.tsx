@@ -34,15 +34,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         resolvedRole === "superadmin"
           ? pathname.startsWith("/admin/accounts")
           : resolvedRole === "guest"
-            ? pathname.startsWith("/admin/shared")
-            : !pathname.startsWith("/admin/accounts") &&
-              !pathname.startsWith("/admin/shared");
+            ? pathname.startsWith("/admin/applications")
+            : !pathname.startsWith("/admin/accounts");
       if (!allowed) {
         router.replace(
           resolvedRole === "superadmin"
             ? "/admin/accounts"
             : resolvedRole === "guest"
-              ? "/admin/shared"
+              ? "/admin/applications"
               : "/admin/jobs",
         );
       }
@@ -69,7 +68,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     role === "superadmin"
       ? [{ href: "/admin/accounts", label: "Accounts", Icon: UserCog }]
       : role === "guest"
-        ? [{ href: "/admin/shared", label: "Shared Candidates", Icon: Users }]
+        ? [{ href: "/admin/applications", label: "Applications", Icon: Users }]
         : [
             { href: "/admin/jobs",         label: "Job Postings", Icon: Briefcase },
             { href: "/admin/applications", label: "Applications", Icon: Users     },

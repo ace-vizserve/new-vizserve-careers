@@ -1,5 +1,7 @@
 import { CandidateDetail } from "@/components/CandidateDetail";
+import { GuestNotes } from "@/components/GuestNotes";
 import { ShareToGuestButton } from "@/components/ShareToGuestButton";
+import { getSessionProfile } from "@/lib/auth";
 import { createClient } from "@/lib/server";
 import { notFound } from "next/navigation";
 
@@ -13,6 +15,20 @@ export default async function ApplicationDetailPage({
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) notFound();
+
+  const session = await getSessionProfile();
+  const role = session?.role ?? "hr";
+
+  // A guest may only open candidates explicitly shared with them.
+  if (role === "guest") {
+    const { data: share } = await supabase
+      .from("guest_shares")
+      .select("id")
+      .eq("application_id", Number(id))
+      .eq("guest_user_id", user.id)
+      .maybeSingle();
+    if (!share) notFound();
+  }
 
   const { data: app, error } = await supabase
     .from("applications")
@@ -37,7 +53,12 @@ export default async function ApplicationDetailPage({
     <CandidateDetail
       app={app}
       backHref={backHref}
-      actionSlot={<ShareToGuestButton applicationId={app.id} />}
+      actionSlot={
+        role === "guest" ? undefined : <ShareToGuestButton applicationId={app.id} />
+      }
+      notesSlot={
+        role === "guest" ? <GuestNotes applicationId={app.id} /> : undefined
+      }
     />
   );
 }
