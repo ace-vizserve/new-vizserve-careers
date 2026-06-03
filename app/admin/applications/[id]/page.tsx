@@ -1,4 +1,5 @@
 import { CandidateDetail } from "@/components/CandidateDetail";
+import { CandidateEmails } from "@/components/CandidateEmails";
 import { NotesThread } from "@/components/NotesThread";
 import { ShareToGuestButton } from "@/components/ShareToGuestButton";
 import { getSessionProfile } from "@/lib/auth";
@@ -55,6 +56,9 @@ export default async function ApplicationDetailPage({
       backHref={backHref}
       actionSlot={
         role === "guest" ? undefined : <ShareToGuestButton applicationId={app.id} />
+      }
+      emailSlot={
+        role === "guest" ? undefined : <CandidateEmails applicationId={app.id} />
       }
       notesSlot={<NotesThread applicationId={app.id} />}
     />

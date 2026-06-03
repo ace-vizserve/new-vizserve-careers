@@ -46,11 +46,13 @@ export function CandidateDetail({
   app,
   backHref,
   actionSlot,
+  emailSlot,
   notesSlot,
 }: {
   app: any;
   backHref: string;
   actionSlot?: React.ReactNode;
+  emailSlot?: React.ReactNode;
   notesSlot?: React.ReactNode;
 }) {
   const appliedAt = new Date(app.created_at).toLocaleDateString("en-PH", {
@@ -249,6 +251,7 @@ export function CandidateDetail({
           </Section>
         )}
 
+        {emailSlot}
         {notesSlot}
       </div>
 
