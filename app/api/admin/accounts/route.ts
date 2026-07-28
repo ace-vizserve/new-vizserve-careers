@@ -1,3 +1,4 @@
+import { APP_ACCESS } from "@/lib/app-access";
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/server-admin";
 import { NextResponse } from "next/server";
@@ -49,12 +50,13 @@ export async function POST(req: Request) {
 
   const admin = createAdminClient();
 
-  // Create the Supabase Auth user.
+  // Create the Supabase Auth user. The app_access tag is what lets the account
+  // through the login / route guards — an account created without it is inert.
   const { data: created, error: createErr } = await admin.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
-    user_metadata: { display_name: displayName },
+    user_metadata: { display_name: displayName, app_access: APP_ACCESS },
   });
   if (createErr || !created?.user) {
     return NextResponse.json(

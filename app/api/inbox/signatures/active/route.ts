@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/server";
 import { createAdminClient } from "@/lib/server-admin";
 import { NextResponse } from "next/server";
+import { hasAppAccess } from "@/lib/app-access";
 
 /**
  * Returns the user's currently active signature (if any).
@@ -10,7 +11,7 @@ export async function GET() {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    if (!user || !hasAppAccess(user)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

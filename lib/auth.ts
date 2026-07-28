@@ -1,3 +1,4 @@
+import { hasAppAccess } from "@/lib/app-access";
 import { createClient } from "@/lib/server";
 
 export type Role = "superadmin" | "hr" | "guest";
@@ -12,8 +13,8 @@ export interface SessionProfile {
 
 /**
  * Resolves the signed-in user together with their profile row.
- * Returns null when there is no session, no profile row, or the
- * account has been disabled.
+ * Returns null when there is no session, the account is not tagged for this
+ * app, there is no profile row, or the account has been disabled.
  *
  * Reads through the regular (cookie-scoped) server client, so the
  * "read own profile" RLS policy is what makes the lookup work.
@@ -21,7 +22,7 @@ export interface SessionProfile {
 export async function getSessionProfile(): Promise<SessionProfile | null> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  if (!user || !hasAppAccess(user)) return null;
 
   const { data: profile } = await supabase
     .from("profiles")

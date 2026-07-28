@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/server";
 import { NextResponse } from "next/server";
 import { detectFaceFromImage } from "@/lib/face-detection";
+import { hasAppAccess } from "@/lib/app-access";
 
 // Force Node.js runtime — sharp is a native module.
 export const runtime = "nodejs";
@@ -31,7 +32,7 @@ export async function POST(
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) {
+    if (!user || !hasAppAccess(user)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

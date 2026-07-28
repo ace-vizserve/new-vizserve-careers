@@ -1,5 +1,6 @@
 "use client";
 
+import { NO_APP_ACCESS_MESSAGE, hasAppAccess } from "@/lib/app-access";
 import { createClient } from "@/lib/client";
 import { Briefcase, ChevronRight, Contact, LogOut, Mail, UserCog, Users } from "lucide-react";
 import Link from "next/link";
@@ -11,12 +12,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const [checking, setChecking] = useState(true);
   const [role, setRole] = useState<string | null>(null);
+  const [denied, setDenied] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) {
         if (pathname !== "/admin/login") router.replace("/admin/login");
+        setChecking(false);
+        return;
+      }
+      // A session from a sibling VizServe app is still a session — the
+      // app_access tag is what decides whether it belongs in this dashboard.
+      if (!hasAppAccess(user)) {
+        setDenied(true);
         setChecking(false);
         return;
       }
@@ -59,6 +68,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (checking) return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50">
       <div className="w-8 h-8 border-2 border-[#4258A5] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+  if (denied) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <div className="w-full max-w-sm bg-white rounded-2xl border border-slate-100 shadow-sm p-8 text-center">
+        <h1 className="text-lg font-bold text-slate-900">No access</h1>
+        <p className="text-sm text-slate-500 mt-2">{NO_APP_ACCESS_MESSAGE}</p>
+        <button
+          onClick={handleLogout}
+          className="w-full mt-6 py-3 rounded-xl text-white text-sm font-semibold transition-all"
+          style={{ backgroundColor: '#4258A5' }}>
+          Sign in with a different account
+        </button>
+      </div>
     </div>
   );
 

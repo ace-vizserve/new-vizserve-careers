@@ -11,7 +11,10 @@
       "Bash(rm db/accounts.sql)",
       "Bash(rmdir db *)",
       "Bash(rm components/GuestNotes.tsx)",
-      "Bash(rm -r app/api/guest)"
+      "Bash(rm -r app/api/guest)",
+      "Bash(node \"C:/Users/Kurt/AppData/Local/Temp/claude/c--Coding-work-new-vizserve-careers-new-vizserve-careers/051f6642-79b5-40c0-a680-e6aa9df0c69f/scratchpad/gate.js\")",
+      "Bash(git diff *)",
+      "Bash(npx tsc *)"
     ]
   }
 }

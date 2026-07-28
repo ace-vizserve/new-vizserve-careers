@@ -1,5 +1,6 @@
 "use client";
 
+import { NO_APP_ACCESS_MESSAGE, hasAppAccess } from "@/lib/app-access";
 import { createClient } from "@/lib/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -21,6 +22,15 @@ export default function AdminLoginPage() {
 
     if (authError) {
       setError("Invalid email or password.");
+      setLoading(false);
+      return;
+    }
+
+    // The credentials are valid, but the Auth project is shared with other
+    // VizServe apps — only accounts tagged for the ATS may come in.
+    if (!hasAppAccess(signInData.user)) {
+      await supabase.auth.signOut();
+      setError(NO_APP_ACCESS_MESSAGE);
       setLoading(false);
       return;
     }
