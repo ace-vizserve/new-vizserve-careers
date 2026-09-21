@@ -21,6 +21,8 @@ interface SyncResult {
   fetched: number;
   inserted: number;
   skipped: number;
+  /** Attachments recovered for messages that were already in the DB. */
+  backfilled: number;
   errors: string[];
 }
 
@@ -78,7 +80,7 @@ export async function appendToSentFolder(rawMessage: Buffer): Promise<void> {
  * new ones in the database. Returns counts for visibility.
  */
 export async function syncInbox(limit = 50): Promise<SyncResult> {
-  const result: SyncResult = { fetched: 0, inserted: 0, skipped: 0, errors: [] };
+  const result: SyncResult = { fetched: 0, inserted: 0, skipped: 0, backfilled: 0, errors: [] };
 
   const client = imapClient();
 
@@ -97,9 +99,10 @@ export async function syncInbox(limit = 50): Promise<SyncResult> {
       result.fetched++;
       try {
         const parsed = await simpleParser(msg.source as Buffer);
-        const inserted = await persistInboundMessage(parsed);
-        if (inserted) result.inserted++;
+        const outcome = await persistInboundMessage(parsed, result.errors);
+        if (outcome.inserted) result.inserted++;
         else result.skipped++;
+        result.backfilled += outcome.backfilled;
       } catch (err: any) {
         result.errors.push(`uid=${msg.uid}: ${err.message}`);
       }
@@ -112,12 +115,26 @@ export async function syncInbox(limit = 50): Promise<SyncResult> {
   return result;
 }
 
+interface PersistOutcome {
+  /** True when a new message row was written, false on a Message-ID dedup hit. */
+  inserted: boolean;
+  /** Attachments recovered for a message that was already in the DB. */
+  backfilled: number;
+}
+
 /**
- * Inserts an inbound message and its containing thread.
- * Returns true if a new message row was inserted, false if the
- * Message-ID already exists in the DB.
+ * Inserts an inbound message and its containing thread, along with any
+ * attachments. On a dedup hit the message is left alone but its attachments
+ * are backfilled if any are missing.
+ *
+ * `errors` collects per-attachment failures so they surface in the sync
+ * result. A bad attachment must never cost us the message, but it must not
+ * pass silently either.
  */
-async function persistInboundMessage(parsed: ParsedMail): Promise<boolean> {
+async function persistInboundMessage(
+  parsed: ParsedMail,
+  errors: string[],
+): Promise<PersistOutcome> {
   const supabase = createAdminClient();
   const mailbox = currentMailboxAddress();
 
@@ -128,7 +145,7 @@ async function persistInboundMessage(parsed: ParsedMail): Promise<boolean> {
       ? parsed.to[0]?.value[0]?.address?.toLowerCase().trim() ?? ""
       : parsed.to?.value[0]?.address?.toLowerCase().trim() ?? "";
 
-  if (!fromAddress) return false;
+  if (!fromAddress) return { inserted: false, backfilled: 0 };
 
   const messageId = parsed.messageId ?? null;
   const subject = parsed.subject ?? "";
@@ -145,7 +162,12 @@ async function persistInboundMessage(parsed: ParsedMail): Promise<boolean> {
       .eq("external_id", messageId)
       .eq("mailbox_address", mailbox)
       .maybeSingle();
-    if (existing) return false;
+    if (existing) {
+      // Messages synced before attachments were stored have none on file.
+      // Heal them here so a re-sync surfaces what was previously dropped.
+      const backfilled = await backfillAttachments(existing.id, parsed, bodyHtml, errors);
+      return { inserted: false, backfilled };
+    }
   }
 
   // Find/create the thread for this participant (by email address).
@@ -155,20 +177,35 @@ async function persistInboundMessage(parsed: ParsedMail): Promise<boolean> {
     lastMessageAt: receivedAt,
   });
 
-  const { error } = await supabase.from("inbox_messages").insert({
-    thread_id: thread.id,
-    direction: "inbound",
-    from_address: fromAddress,
-    to_address: toAddress,
-    subject,
-    body_text: bodyText,
-    body_html: bodyHtml,
-    external_id: messageId,
-    is_read: false,
-    created_at: receivedAt,
-    mailbox_address: mailbox,
-  });
-  if (error) throw new Error(`message insert: ${error.message}`);
+  const { data: message, error } = await supabase
+    .from("inbox_messages")
+    .insert({
+      thread_id: thread.id,
+      direction: "inbound",
+      from_address: fromAddress,
+      to_address: toAddress,
+      subject,
+      body_text: bodyText,
+      body_html: bodyHtml,
+      external_id: messageId,
+      is_read: false,
+      created_at: receivedAt,
+      mailbox_address: mailbox,
+    })
+    .select("id")
+    .single();
+  if (error || !message) throw new Error(`message insert: ${error?.message}`);
+
+  // Store the attachments, then repoint any `cid:` image in the body at
+  // the row we just created so inline images actually render in the UI.
+  const stored = await persistAttachments(message.id, parsed, errors);
+  const rewritten = rewriteInlineCids(bodyHtml, stored);
+  if (rewritten !== bodyHtml) {
+    await supabase
+      .from("inbox_messages")
+      .update({ body_html: rewritten })
+      .eq("id", message.id);
+  }
 
   // Bump thread metadata.
   await supabase
@@ -179,7 +216,180 @@ async function persistInboundMessage(parsed: ParsedMail): Promise<boolean> {
     })
     .eq("id", thread.id);
 
-  return true;
+  return { inserted: true, backfilled: 0 };
+}
+
+export const ATTACHMENT_BUCKET = "inbox-attachments";
+
+/**
+ * Stores the attachments of a message that was already synced, but only when
+ * what's on file doesn't account for every part the message actually carries.
+ * Lets a re-sync recover attachments from messages that landed before this
+ * feature existed — or before the Storage bucket did — without duplicating
+ * anything for messages that are already complete.
+ */
+async function backfillAttachments(
+  messageId: string,
+  parsed: ParsedMail,
+  bodyHtml: string | null,
+  errors: string[],
+): Promise<number> {
+  const expected = parsed.attachments?.length ?? 0;
+  if (expected === 0) return 0;
+
+  const supabase = createAdminClient();
+  const { count, error } = await supabase
+    .from("inbox_attachments")
+    .select("id", { count: "exact", head: true })
+    .eq("message_id", messageId);
+
+  // A missing table (migration not applied yet) must not break the sync.
+  if (error) {
+    errors.push(`attachment backfill check for ${messageId}: ${error.message}`);
+    return 0;
+  }
+
+  const have = count ?? 0;
+  if (have >= expected) return 0;
+
+  // Fewer rows than the message has parts — an earlier run lost some to an
+  // upload failure. Which row came from which part isn't recorded, so drop
+  // what's there and redo the whole set. Storage paths are derived from the
+  // same parse and uploaded with upsert, so this overwrites in place rather
+  // than orphaning objects.
+  if (have > 0) {
+    const { error: delErr } = await supabase
+      .from("inbox_attachments")
+      .delete()
+      .eq("message_id", messageId);
+    if (delErr) {
+      errors.push(`attachment backfill reset for ${messageId}: ${delErr.message}`);
+      return 0;
+    }
+  }
+
+  const stored = await persistAttachments(messageId, parsed, errors);
+  const rewritten = rewriteInlineCids(bodyHtml, stored);
+  if (rewritten && rewritten !== bodyHtml) {
+    await supabase
+      .from("inbox_messages")
+      .update({ body_html: rewritten })
+      .eq("id", messageId);
+  }
+  return stored.length;
+}
+
+/** Attachments above this are skipped — the metadata row is still written
+ *  so the UI can show the filename and say why there's nothing to open. */
+const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024; // 25 MB
+
+interface StoredAttachment {
+  id: string;
+  contentId: string | null;
+}
+
+/**
+ * Uploads every attachment part of a parsed message to Storage and writes
+ * one inbox_attachments row per part. A part that can't be stored is skipped
+ * and reported via `errors` — a bad attachment must never cost us the
+ * message itself, and a later sync will retry it via backfillAttachments.
+ */
+async function persistAttachments(
+  messageId: string,
+  parsed: ParsedMail,
+  errors: string[],
+): Promise<StoredAttachment[]> {
+  const attachments = parsed.attachments ?? [];
+  if (attachments.length === 0) return [];
+
+  const supabase = createAdminClient();
+  const stored: StoredAttachment[] = [];
+
+  for (const [index, att] of attachments.entries()) {
+    try {
+      const contentId = att.cid ? att.cid.replace(/^<|>$/g, "") : null;
+      const isInline =
+        att.contentDisposition === "inline" || (att.related === true && !!contentId);
+      const filename = safeFilename(att.filename, contentId, index, att.contentType);
+      const size = att.size ?? att.content?.length ?? 0;
+
+      let storagePath = "";
+      if (size > 0 && size <= MAX_ATTACHMENT_BYTES && att.content) {
+        storagePath = `${messageId}/${index}-${filename}`;
+        const { error: upErr } = await supabase.storage
+          .from(ATTACHMENT_BUCKET)
+          .upload(storagePath, att.content, {
+            contentType: att.contentType || "application/octet-stream",
+            upsert: true,
+          });
+        if (upErr) throw new Error(`upload: ${upErr.message}`);
+      }
+
+      const { data: row, error: rowErr } = await supabase
+        .from("inbox_attachments")
+        .insert({
+          message_id: messageId,
+          filename,
+          content_type: att.contentType || "application/octet-stream",
+          size_bytes: size,
+          storage_path: storagePath,
+          content_id: contentId,
+          is_inline: isInline,
+        })
+        .select("id")
+        .single();
+      if (rowErr || !row) throw new Error(`row insert: ${rowErr?.message}`);
+
+      stored.push({ id: row.id, contentId });
+    } catch (err: any) {
+      const label = att.filename || `part ${index + 1}`;
+      console.error(`[inbox] attachment ${index} of message ${messageId}:`, err.message);
+      errors.push(`attachment "${label}" of message ${messageId}: ${err.message}`);
+    }
+  }
+
+  return stored;
+}
+
+/**
+ * Turns `src="cid:abc123"` into `src="/api/inbox/attachments/<uuid>"`.
+ * Mail clients emit the cid with or without angle brackets and with either
+ * quote style, so match loosely and compare on the bare id.
+ */
+function rewriteInlineCids(
+  html: string | null,
+  stored: StoredAttachment[],
+): string | null {
+  if (!html) return html;
+  const byCid = new Map(
+    stored.filter((s) => s.contentId).map((s) => [s.contentId!.toLowerCase(), s.id]),
+  );
+  if (byCid.size === 0) return html;
+
+  return html.replace(/(["'(])cid:([^"')\s]+)(["')])/gi, (match, open, cid, close) => {
+    const id = byCid.get(cid.replace(/^<|>$/g, "").toLowerCase());
+    return id ? `${open}/api/inbox/attachments/${id}${close}` : match;
+  });
+}
+
+/** Strips path separators and control characters so the value is safe as a
+ *  Storage key segment, and always returns something non-empty. */
+function safeFilename(
+  raw: string | undefined,
+  contentId: string | null,
+  index: number,
+  contentType: string | undefined,
+): string {
+  const fallbackExt = contentType?.split("/")[1]?.split("+")[0] ?? "bin";
+  const base =
+    raw?.trim() || (contentId ? `inline-${contentId}` : `attachment-${index + 1}.${fallbackExt}`);
+  const cleaned = base
+    .replace(/[\/]/g, "-")
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u001f\u007f]/g, "")
+    .replace(/[^A-Za-z0-9._\- ]/g, "_")
+    .trim();
+  return (cleaned || `attachment-${index + 1}.${fallbackExt}`).slice(0, 120);
 }
 
 interface ThreadRow {

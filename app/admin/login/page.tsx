@@ -1,5 +1,6 @@
 "use client";
 
+import { NO_APP_ACCESS_MESSAGE, hasAppAccess } from "@/lib/app-access";
 import { createClient } from "@/lib/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -17,7 +18,7 @@ export default function AdminLoginPage() {
     setError("");
 
     const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const { data: signInData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
     if (authError) {
       setError("Invalid email or password.");
@@ -25,7 +26,29 @@ export default function AdminLoginPage() {
       return;
     }
 
-    router.push("/admin/jobs");
+    // The credentials are valid, but the Auth project is shared with other
+    // VizServe apps — only accounts tagged for the ATS may come in.
+    if (!hasAppAccess(signInData.user)) {
+      await supabase.auth.signOut();
+      setError(NO_APP_ACCESS_MESSAGE);
+      setLoading(false);
+      return;
+    }
+
+    // Superadmins go to account management; HR goes to the recruiting pages.
+    let destination = "/admin/jobs";
+    const userId = signInData.user?.id;
+    if (userId) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (profile?.role === "superadmin") destination = "/admin/accounts";
+      else if (profile?.role === "guest") destination = "/admin/applications";
+    }
+
+    router.push(destination);
   };
 
   const inputCls =

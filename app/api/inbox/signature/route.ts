@@ -1,12 +1,13 @@
 import { createClient } from "@/lib/server";
 import { createAdminClient } from "@/lib/server-admin";
 import { NextResponse } from "next/server";
+import { hasAppAccess } from "@/lib/app-access";
 
 export async function GET() {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    if (!user || !hasAppAccess(user)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -33,7 +34,7 @@ export async function PUT(req: Request) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    if (!user || !hasAppAccess(user)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

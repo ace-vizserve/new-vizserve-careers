@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/server";
 import { NextResponse } from "next/server";
+import { hasAppAccess } from "@/lib/app-access";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -7,7 +8,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user || !hasAppAccess(user)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { data, error } = await supabase
       .from("applications")
@@ -36,7 +37,17 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user || !hasAppAccess(user)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    // Guests have a read-only pipeline — they cannot modify applications.
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (profile?.role === "guest") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const body = await req.json();
     const allowed = [

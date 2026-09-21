@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/server";
 import { NextResponse } from "next/server";
+import { hasAppAccess } from "@/lib/app-access";
 
 async function requireAdmin() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { supabase: null, error: true };
+  if (!user || !hasAppAccess(user)) return { supabase: null, error: true };
   return { supabase, error: false };
 }
 

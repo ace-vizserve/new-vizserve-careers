@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Inbox as InboxIcon, RefreshCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, History, Inbox as InboxIcon, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { sileo } from "sileo";
@@ -42,10 +42,16 @@ export default function InboxPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize]);
 
-  const handleSync = async () => {
+  // `deep` sweeps much further back, which is what pulls attachments onto
+  // messages that were synced before attachments were stored at all.
+  const handleSync = async (deep = false) => {
     setSyncing(true);
     try {
-      const res = await fetch("/api/inbox/sync", { method: "POST" });
+      const res = await fetch("/api/inbox/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: deep ? 500 : 50 }),
+      });
       const result = await res.json();
       if (!res.ok) {
         sileo.error({
@@ -54,10 +60,21 @@ export default function InboxPage() {
         });
         return;
       }
-      sileo.success({
-        title: "Inbox synced",
-        description: `${result.inserted} new, ${result.skipped} already known`,
-      });
+      const parts = [`${result.inserted} new`, `${result.skipped} already known`];
+      if (result.backfilled > 0) {
+        parts.push(`${result.backfilled} attachments recovered`);
+      }
+      // Per-message and per-attachment failures don't fail the request, so
+      // without this they'd only ever show up in the server log.
+      const errors: string[] = result.errors ?? [];
+      if (errors.length > 0) {
+        sileo.error({
+          title: `Synced with ${errors.length} problem${errors.length === 1 ? "" : "s"}`,
+          description: errors.slice(0, 3).join(" · "),
+        });
+      } else {
+        sileo.success({ title: "Inbox synced", description: parts.join(", ") });
+      }
       await loadThreads(1, pageSize);
       setPage(1);
     } finally {
@@ -85,13 +102,23 @@ export default function InboxPage() {
             {total} {total === 1 ? "conversation" : "conversations"}
           </p>
         </div>
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50">
-          <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
-          {syncing ? "Syncing..." : "Sync"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleSync(true)}
+            disabled={syncing}
+            title="Sweep further back to pull in attachments from older messages"
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50">
+            <History className="w-3.5 h-3.5" />
+            Deep sync
+          </button>
+          <button
+            onClick={() => handleSync(false)}
+            disabled={syncing}
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50">
+            <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "Syncing..." : "Sync"}
+          </button>
+        </div>
       </header>
 
       <div className="flex-1 overflow-y-auto min-h-0">

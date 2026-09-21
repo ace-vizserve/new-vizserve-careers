@@ -19,6 +19,7 @@ import {
   MoreVertical,
   Pencil,
   RotateCcw,
+  Share2,
   Star,
   StarOff,
   UserX,
@@ -28,6 +29,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { renderResumePageOneToPng } from "./lib/render-pdf-page";
+import { ShareToGuestDialog } from "@/components/ShareToGuestButton";
+import { createClient } from "@/lib/client";
 
 /* ── Types ─────────────────────────────────────────────── */
 
@@ -188,6 +191,7 @@ function CardMenu({
   onPool,
   onUnpool,
   onSendEmail,
+  onShare,
 }: {
   app: Application;
   onDrop: (app: Application) => void;
@@ -195,6 +199,7 @@ function CardMenu({
   onPool: (app: Application) => void;
   onUnpool: (app: Application) => void;
   onSendEmail: (app: Application) => void;
+  onShare: (app: Application) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -241,6 +246,13 @@ function CardMenu({
           >
             <Mail className="w-3.5 h-3.5 text-[#4258A5]" />
             Send Email
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); setOpen(false); onShare(app); }}
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+          >
+            <Share2 className="w-3.5 h-3.5 text-[#4258A5]" />
+            Share to guest
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); setOpen(false); onDrop(app); }}
@@ -815,10 +827,14 @@ export default function JobPipelinePage() {
   const [droppedApps, setDroppedApps] = useState<Application[]>([]);
   const [archivedApps, setArchivedApps] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
+  // Guests get a read-only board: no drag, no card actions.
+  const [viewerRole, setViewerRole] = useState<string>("hr");
+  const isGuest = viewerRole === "guest";
 
   // Modal states
   const [dropTarget, setDropTarget] = useState<Application | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<Application | null>(null);
+  const [shareTarget, setShareTarget] = useState<Application | null>(null);
   const [editTarget, setEditTarget] = useState<{ app: Application; kind: "drop" | "archive" } | null>(null);
   const [showDroppedModal, setShowDroppedModal] = useState(false);
   const [showArchivedModal, setShowArchivedModal] = useState(false);
@@ -838,6 +854,20 @@ export default function JobPipelinePage() {
 
   const removeToast = useCallback((id: number) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  // Resolve the viewer's role so guests get a read-only pipeline.
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (data?.role) setViewerRole(data.role);
+    });
   }, []);
 
   const reload = async () => {
@@ -1274,6 +1304,7 @@ export default function JobPipelinePage() {
                             key={app.id}
                             draggableId={String(app.id)}
                             index={index}
+                            isDragDisabled={isGuest}
                           >
                             {(provided, snapshot) => (
                               <div
@@ -1335,15 +1366,18 @@ export default function JobPipelinePage() {
                                     </p>
                                   </div>
 
-                                  {/* 3-dot menu */}
-                                  <CardMenu
-                                    app={app}
-                                    onDrop={(a) => setDropTarget(a)}
-                                    onArchive={(a) => setArchiveTarget(a)}
-                                    onPool={handlePool}
-                                    onUnpool={handleUnpool}
-                                    onSendEmail={handleSendEmail}
-                                  />
+                                  {/* 3-dot menu — HR only */}
+                                  {!isGuest && (
+                                    <CardMenu
+                                      app={app}
+                                      onDrop={(a) => setDropTarget(a)}
+                                      onArchive={(a) => setArchiveTarget(a)}
+                                      onPool={handlePool}
+                                      onUnpool={handleUnpool}
+                                      onSendEmail={handleSendEmail}
+                                      onShare={(a) => setShareTarget(a)}
+                                    />
+                                  )}
                                 </div>
                               </div>
                             )}
@@ -1374,6 +1408,13 @@ export default function JobPipelinePage() {
           app={archiveTarget}
           onClose={() => setArchiveTarget(null)}
           onConfirm={handleArchive}
+        />
+      )}
+
+      {shareTarget && (
+        <ShareToGuestDialog
+          applicationId={shareTarget.id}
+          onClose={() => setShareTarget(null)}
         />
       )}
 

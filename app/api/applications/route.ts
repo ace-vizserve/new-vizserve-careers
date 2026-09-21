@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/server";
 import { createAdminClient } from "@/lib/server-admin";
 import { NextResponse } from "next/server";
+import { hasAppAccess } from "@/lib/app-access";
 
 export async function POST(req: Request) {
   try {
@@ -198,9 +199,17 @@ export async function GET(req: Request) {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    if (!user || !hasAppAccess(user)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Resolve the viewer's role — guests only see candidates shared with them.
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const role = profile?.role ?? "hr";
 
     const { searchParams } = new URL(req.url);
     const jobId = searchParams.get("job_id");
@@ -217,6 +226,16 @@ export async function GET(req: Request) {
 
     if (jobId) query = query.eq("job_id", jobId);
     if (pooled === "true") query = query.eq("is_pooled", true);
+
+    // Guest scope: restrict to the application ids shared with this guest.
+    if (role === "guest") {
+      const { data: shares } = await supabase
+        .from("guest_shares")
+        .select("application_id")
+        .eq("guest_user_id", user.id);
+      const ids = (shares ?? []).map((s) => s.application_id);
+      query = query.in("id", ids.length ? ids : [-1]);
+    }
 
     // Archive filter: default hides archived rows; ?archived=true returns only archived.
     if (archived === "true") {

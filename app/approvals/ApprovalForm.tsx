@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useDropzone } from "react-dropzone";
-import { Paperclip, X, Loader2, CheckCircle2, AlertCircle, Briefcase } from "lucide-react";
+import { AlertCircle, Briefcase, CheckCircle2, Link2, Loader2, Paperclip, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ApproversList } from "./ApproversList";
 import type { ApprovalStage } from "./types";
@@ -39,6 +39,10 @@ export function ApprovalForm() {
   ]);
   const [requireOrder, setRequireOrder] = useState(true);
   const [files, setFiles] = useState<File[]>([]);
+  const [links, setLinks] = useState<{ name: string; url: string }[]>([]);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkName, setLinkName] = useState("");
+  const [linkError, setLinkError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [approverError, setApproverError] = useState<string | null>(null);
@@ -50,6 +54,23 @@ export function ApprovalForm() {
 
   const removeFile = (idx: number) =>
     setFiles((prev) => prev.filter((_, i) => i !== idx));
+
+  const addLink = () => {
+    const url = linkUrl.trim();
+    if (!url) return;
+    try {
+      new URL(url);
+    } catch {
+      setLinkError("Enter a full URL (including https://).");
+      return;
+    }
+    setLinks((prev) => [...prev, { name: linkName.trim() || url, url }]);
+    setLinkUrl("");
+    setLinkName("");
+    setLinkError(null);
+  };
+  const removeLink = (idx: number) =>
+    setLinks((prev) => prev.filter((_, i) => i !== idx));
 
   const addStage = () =>
     setStages((prev) => [...prev, { id: newStageId(), approvers: [] }]);
@@ -109,6 +130,7 @@ export function ApprovalForm() {
         dueDate: values.dueDate,
         requireOrder,
         attachments,
+        links,
       };
 
       const res = await fetch("/api/approvals/submit", {
@@ -126,6 +148,7 @@ export function ApprovalForm() {
       reset();
       setStages([{ id: newStageId(), approvers: [] }]);
       setFiles([]);
+      setLinks([]);
       setRequireOrder(true);
     } catch (err) {
       setResult({ ok: false, message: (err as Error).message });
@@ -219,6 +242,64 @@ export function ApprovalForm() {
                   aria-label={`Remove ${file.name}`}
                   className="text-slate-400 hover:text-rose-500 transition-colors"
                 >
+                  <X className="w-4 h-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Field>
+
+      <Field label="Link Attachments">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            type="url"
+            value={linkUrl}
+            onChange={(e) => {
+              setLinkUrl(e.target.value);
+              setLinkError(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addLink();
+              }
+            }}
+            placeholder="https://example.com/document.pdf"
+            className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4258A5]/20 focus:border-[#4258A5]"
+          />
+          
+          <button
+            type="button"
+            onClick={addLink}
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold text-white rounded-lg hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: "#4258A5" }}>
+            <Plus className="w-3.5 h-3.5" />
+            Add link
+          </button>
+        </div>
+        {linkError && <p className="text-xs text-rose-500 mt-1">{linkError}</p>}
+        {links.length > 0 && (
+          <ul className="mt-3 space-y-1.5">
+            {links.map((link, idx) => (
+              <li
+                key={`${link.url}-${idx}`}
+                className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2 text-sm">
+                <span className="flex items-center gap-2 min-w-0">
+                  <Link2 className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="truncate text-slate-700 hover:text-[#4258A5] hover:underline">
+                    {link.name}
+                  </a>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeLink(idx)}
+                  aria-label={`Remove ${link.name}`}
+                  className="text-slate-400 hover:text-rose-500 transition-colors">
                   <X className="w-4 h-4" />
                 </button>
               </li>
