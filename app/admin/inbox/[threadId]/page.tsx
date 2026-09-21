@@ -2,10 +2,20 @@
 
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
-import { ArrowLeft, ChevronDown, FileText, Send } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  FileArchive,
+  FileImage,
+  FileText,
+  FileType,
+  Paperclip,
+  Send,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { sanitizeEmailHtml } from "@/lib/sanitize-email-html";
 import { sileo } from "sileo";
 
 interface Template {
@@ -14,6 +24,13 @@ interface Template {
   subject: string;
   body: string;
   body_html: string | null;
+}
+
+interface Attachment {
+  id: string;
+  filename: string;
+  content_type: string;
+  size_bytes: number;
 }
 
 interface Message {
@@ -26,6 +43,7 @@ interface Message {
   body_html: string | null;
   created_at: string;
   is_read: boolean;
+  attachments: Attachment[];
 }
 
 interface Thread {
@@ -44,7 +62,6 @@ export default function ThreadPage() {
 
   const [thread, setThread] = useState<Thread | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [replyHtml, setReplyHtml] = useState("");
   const [signaturePrefill, setSignaturePrefill] = useState("");
@@ -115,21 +132,8 @@ export default function ThreadPage() {
       return;
     }
     const data = await res.json();
-    const loadedMessages: Message[] = data.messages ?? [];
     setThread(data.thread);
-    setMessages(loadedMessages);
-    // Gmail-style: collapse the conversation, expand only the latest message.
-    const last = loadedMessages[loadedMessages.length - 1];
-    setExpandedIds(last ? new Set([last.id]) : new Set());
-  };
-
-  const toggleMessage = (id: string) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    setMessages(data.messages ?? []);
   };
 
   useEffect(() => {
@@ -237,37 +241,43 @@ export default function ThreadPage() {
             <p className="text-sm text-slate-400">No messages yet.</p>
           </div>
         ) : (
-          <div className="mx-auto max-w-8xl px-9 py-5 space-y-2">
-            {messages.map((msg) => (
-              <MessageCard
-                key={msg.id}
-                message={msg}
-                expanded={expandedIds.has(msg.id)}
-                onToggle={() => toggleMessage(msg.id)}
-              />
+          <div className="w-full px-6 py-6 space-y-1">
+            {messages.map((msg, i) => (
+              <div key={msg.id}>
+                {startsNewDay(messages[i - 1], msg) && <DayDivider iso={msg.created_at} />}
+                <MessageBubble
+                  message={msg}
+                  /* Consecutive messages from the same side read as one turn —
+                     only the first of a run carries the avatar and name. */
+                  showAvatar={!sameSideAsPrevious(messages[i - 1], msg)}
+                />
+              </div>
             ))}
           </div>
         )}
       </div>
 
       <footer className="flex-shrink-0 border-t border-slate-100 bg-white px-4 py-3">
-        <div className="max-h-72 overflow-y-auto">
-          <RichTextEditor
-            value={replyHtml}
-            onChange={setReplyHtml}
-            placeholder={`Reply to ${displayName}...`}
-            minHeight="80px"
-          />
-        </div>
-        <div className="mt-2 flex items-center justify-end">
-          <button
-            onClick={handleReply}
-            disabled={sending || htmlIsEmpty(replyHtml)}
-            className="inline-flex items-center gap-2 px-4 py-1.5 text-sm font-semibold text-white rounded-lg shadow-sm transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ backgroundColor: "#4258A5" }}>
-            <Send className="w-3.5 h-3.5" />
-            {sending ? "Sending..." : "Send"}
-          </button>
+        {/* Matches the message column above it. */}
+        <div className="w-full">
+          <div className="max-h-72 overflow-y-auto">
+            <RichTextEditor
+              value={replyHtml}
+              onChange={setReplyHtml}
+              placeholder={`Reply to ${displayName}...`}
+              minHeight="80px"
+            />
+          </div>
+          <div className="mt-2 flex items-center justify-end">
+            <button
+              onClick={handleReply}
+              disabled={sending || htmlIsEmpty(replyHtml)}
+              className="inline-flex items-center gap-2 px-4 py-1.5 text-sm font-semibold text-white rounded-lg shadow-sm transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: "#4258A5" }}>
+              <Send className="w-3.5 h-3.5" />
+              {sending ? "Sending..." : "Send"}
+            </button>
+          </div>
         </div>
       </footer>
 
@@ -292,119 +302,195 @@ export default function ThreadPage() {
   );
 }
 
-function MessageCard({
-  message,
-  expanded,
-  onToggle,
-}: {
-  message: Message;
-  expanded: boolean;
-  onToggle: () => void;
-}) {
-  const isOutbound = message.direction === "outbound";
-  const senderLabel = isOutbound ? "You" : message.from_address;
-  const fullTime = new Date(message.created_at).toLocaleString([], {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-  const shortTime = formatShortTime(message.created_at);
-  const snippet = messageSnippet(message);
-
+function DayDivider({ iso }: { iso: string }) {
   return (
-    <article
-      className={`rounded-xl border bg-white transition-shadow ${
-        expanded ? "border-slate-200 shadow-sm" : "border-slate-200/70"
-      }`}>
-      {/* Header — always visible, click to expand/collapse */}
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50/60 rounded-xl transition-colors">
-        <div
-          className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold text-white"
-          style={{ backgroundColor: isOutbound ? "#4258A5" : "#94a3b8" }}>
-          {initials(senderLabel)}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2">
-            <p className="text-sm font-semibold text-slate-900 truncate">{senderLabel}</p>
-            {isOutbound && (
-              <span
-                className="flex-shrink-0 text-[10px] font-bold uppercase tracking-wide text-white px-1.5 py-0.5 rounded"
-                style={{ backgroundColor: "#4258A5" }}>
-                Sent
-              </span>
-            )}
-          </div>
-          {expanded ? (
-            <p className="text-xs text-slate-500 truncate mt-0.5">to {message.to_address}</p>
-          ) : (
-            <p className="text-xs text-slate-500 truncate mt-0.5">{snippet}</p>
-          )}
-        </div>
-        <div className="flex-shrink-0 flex items-center gap-2 self-start pt-0.5">
-          <span className="text-xs text-slate-400">{expanded ? fullTime : shortTime}</span>
-          <ChevronDown
-            className={`w-4 h-4 text-slate-400 transition-transform ${expanded ? "rotate-180" : ""}`}
-          />
-        </div>
-      </button>
-
-      {/* Body — only when expanded */}
-      {expanded && (
-        <div className="px-4 pb-4 pt-1 border-t border-slate-100">
-          {message.body_html ? (
-            <div
-              className="rich-text text-sm break-words pt-3 [&_img]:my-2 [&_img]:max-h-32"
-              dangerouslySetInnerHTML={{ __html: message.body_html }}
-            />
-          ) : (
-            <div className="text-sm text-slate-700 whitespace-pre-wrap break-words leading-relaxed pt-3">
-              {message.body_text?.trim() || "(no body)"}
-            </div>
-          )}
-        </div>
-      )}
-    </article>
+    <div className="flex items-center gap-3 py-4">
+      <div className="flex-1 h-px bg-slate-200" />
+      <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">
+        {formatDayLabel(iso)}
+      </span>
+      <div className="flex-1 h-px bg-slate-200" />
+    </div>
   );
 }
 
-function formatShortTime(iso: string): string {
-  const date = new Date(iso);
-  const now = new Date();
-  const sameDay = date.toDateString() === now.toDateString();
-  if (sameDay) {
-    return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  }
-  const sameYear = date.getFullYear() === now.getFullYear();
-  return date.toLocaleDateString([], {
-    month: "short",
-    day: "numeric",
-    ...(sameYear ? {} : { year: "numeric" }),
+/**
+ * One message in the conversation stream. Everything is always visible —
+ * no expand/collapse — so the thread reads top to bottom like a chat.
+ */
+function MessageBubble({
+  message,
+  showAvatar,
+}: {
+  message: Message;
+  showAvatar: boolean;
+}) {
+  const isOutbound = message.direction === "outbound";
+  const senderLabel = isOutbound ? "You" : message.from_address;
+  const time = new Date(message.created_at).toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
   });
+
+  // Mail bodies are whole HTML documents whose <style> rules would otherwise
+  // restyle the admin UI around them. Parsing isn't free on a long thread, so
+  // each body is cleaned once.
+  const bodyHtml = useMemo(
+    () => (message.body_html ? sanitizeEmailHtml(message.body_html) : ""),
+    [message.body_html],
+  );
+
+  return (
+    <div className={`flex gap-2.5 py-1 ${isOutbound ? "flex-row-reverse" : "flex-row"}`}>
+      {/* The avatar column keeps its width on follow-ups so a run stays aligned. */}
+      <div className="flex-shrink-0 w-8">
+        {showAvatar && (
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-semibold text-white"
+            style={{ backgroundColor: isOutbound ? "#4258A5" : "#94a3b8" }}
+            title={senderLabel}>
+            {initials(senderLabel)}
+          </div>
+        )}
+      </div>
+
+      <div
+        className={`min-w-0 max-w-[calc(100%-2.5rem)] flex flex-col ${isOutbound ? "items-end" : "items-start"}`}>
+        {showAvatar && (
+          <p className="text-[11px] text-slate-500 mb-1 px-1 truncate max-w-full">{senderLabel}</p>
+        )}
+
+        <div
+          className={`rounded-2xl px-4 py-2.5 border shadow-sm max-w-full ${
+            isOutbound
+              ? "bg-[#4258A5]/[0.07] border-[#4258A5]/20 rounded-tr-sm"
+              : "bg-white border-slate-200 rounded-tl-sm"
+          }`}>
+          {bodyHtml ? (
+            /* The `!` matters: Outlook pastes screenshots as
+               <img style="max-width: 1488px">, and an inline style outranks
+               any class rule, so without it the image renders at its own size
+               and gets clipped at the edge of the message. */
+            <div
+              className="rich-text text-sm break-words overflow-x-auto [&_img]:my-2 [&_img]:!max-w-full [&_img]:!h-auto [&_table]:!max-w-full"
+              dangerouslySetInnerHTML={{ __html: bodyHtml }}
+            />
+          ) : (
+            <div className="text-sm text-slate-700 whitespace-pre-wrap break-words leading-relaxed">
+              {message.body_text?.trim() || "(no body)"}
+            </div>
+          )}
+
+          {message.attachments?.length > 0 && (
+            <AttachmentList attachments={message.attachments} />
+          )}
+        </div>
+
+        <p className="text-[11px] text-slate-400 mt-1 px-1">{time}</p>
+      </div>
+    </div>
+  );
 }
 
-function messageSnippet(message: Message): string {
-  const raw = message.body_html
-    ? message.body_html
-        // Drop <style>/<script> blocks entirely so their CSS/JS doesn't leak into the preview.
-        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, " ")
-        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, " ")
-        .replace(/<!--[\s\S]*?-->/g, " ")
-        .replace(/<[^>]+>/g, " ")
-    : message.body_text ?? "";
-  const text = raw
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/\s+/g, " ")
-    .trim();
-  if (!text) return "(no body)";
-  return text.length > 120 ? `${text.slice(0, 120)}…` : text;
+function AttachmentList({ attachments }: { attachments: Attachment[] }) {
+  return (
+    <div className="mt-2.5 pt-2.5 border-t border-slate-200/70">
+      <p className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 mb-1.5">
+        <Paperclip className="w-3 h-3" />
+        {attachments.length} {attachments.length === 1 ? "attachment" : "attachments"}
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {attachments.map((att) => (
+          <AttachmentChip key={att.id} attachment={att} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AttachmentChip({ attachment }: { attachment: Attachment }) {
+  const Icon = attachmentIcon(attachment.content_type, attachment.filename);
+  const isImage = attachment.content_type.startsWith("image/");
+  const href = `/api/inbox/attachments/${attachment.id}`;
+
+  return (
+    <div className="flex items-center gap-2 pl-2 pr-1 py-1.5 rounded-lg border border-slate-200 bg-white hover:border-[#4258A5]/40 hover:bg-slate-50 transition-colors max-w-full">
+      {isImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={href} alt="" className="w-8 h-8 rounded object-cover flex-shrink-0 bg-slate-100" />
+      ) : (
+        <Icon className="w-4 h-4 text-slate-400 flex-shrink-0" />
+      )}
+
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="min-w-0 flex-1"
+        title={attachment.filename}>
+        <p className="text-xs font-medium text-slate-700 truncate max-w-[180px]">
+          {attachment.filename}
+        </p>
+        <p className="text-[10px] text-slate-400">{formatBytes(attachment.size_bytes)}</p>
+      </a>
+
+      <a
+        href={`${href}?download=1`}
+        download={attachment.filename}
+        className="flex-shrink-0 p-1.5 rounded-md text-slate-400 hover:text-[#4258A5] hover:bg-[#4258A5]/10 transition-colors"
+        aria-label={`Download ${attachment.filename}`}>
+        <Download className="w-3.5 h-3.5" />
+      </a>
+    </div>
+  );
+}
+
+function attachmentIcon(contentType: string, filename: string) {
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+  if (contentType.startsWith("image/")) return FileImage;
+  if (contentType === "application/pdf" || ext === "pdf") return FileType;
+  if (/zip|rar|7z|tar|gzip/.test(contentType) || ["zip", "rar", "7z"].includes(ext)) {
+    return FileArchive;
+  }
+  return FileText;
+}
+
+function formatBytes(bytes: number): string {
+  if (!bytes) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function startsNewDay(prev: Message | undefined, current: Message): boolean {
+  if (!prev) return true;
+  return (
+    new Date(prev.created_at).toDateString() !== new Date(current.created_at).toDateString()
+  );
+}
+
+function sameSideAsPrevious(prev: Message | undefined, current: Message): boolean {
+  if (!prev) return false;
+  if (prev.direction !== current.direction) return false;
+  // A gap of more than an hour reads as a new turn, so re-show the avatar.
+  const gap = new Date(current.created_at).getTime() - new Date(prev.created_at).getTime();
+  return gap < 60 * 60 * 1000;
+}
+
+function formatDayLabel(iso: string): string {
+  const date = new Date(iso);
+  const now = new Date();
+  const dayDiff = Math.round(
+    (new Date(now.toDateString()).getTime() - new Date(date.toDateString()).getTime()) / 86400000,
+  );
+  if (dayDiff === 0) return "Today";
+  if (dayDiff === 1) return "Yesterday";
+  return date.toLocaleDateString([], {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    ...(date.getFullYear() === now.getFullYear() ? {} : { year: "numeric" }),
+  });
 }
 
 function htmlIsEmpty(html: string): boolean {

@@ -1,0 +1,373 @@
+
+> our-vizserve@0.1.0 dev
+> next dev --turbopack
+
+   ▲ Next.js 15.5.15 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.254.140:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 2.1s
+ ○ Compiling / ...
+ ✓ Compiled / in 4.5s
+ GET / 200 in 6034ms
+ ○ Compiling /admin/login ...
+ ✓ Compiled /admin/login in 747ms
+ GET /admin/login 200 in 975ms
+ GET / 200 in 802ms
+ ○ Compiling /admin/jobs ...
+ ✓ Compiled /admin/jobs in 771ms
+ GET /admin/jobs 200 in 1048ms
+ GET /admin/login 200 in 417ms
+ ○ Compiling /api/admin/jobs ...
+ ✓ Compiled /api/admin/jobs in 750ms
+ GET /api/admin/jobs 401 in 1402ms
+ GET /api/admin/jobs 401 in 424ms
+ ○ Compiling /admin/accounts ...
+ ✓ Compiled /admin/accounts in 600ms
+ GET /admin/accounts 200 in 746ms
+ ✓ Compiled /api/admin/accounts in 263ms
+ GET /api/admin/accounts 200 in 1485ms
+ GET /api/admin/accounts 200 in 929ms
+ GET /admin/login 200 in 233ms
+ GET /admin/accounts 200 in 217ms
+ GET /api/admin/accounts 200 in 1137ms
+ GET /api/admin/accounts 200 in 1020ms
+ POST /api/admin/accounts 400 in 1125ms
+ POST /api/admin/accounts 400 in 1457ms
+ GET /admin/accounts 200 in 399ms
+ GET /api/admin/accounts 200 in 864ms
+ GET /api/admin/accounts 200 in 846ms
+ ✓ Compiled /api/admin/accounts/[id] in 267ms
+ PATCH /api/admin/accounts/d72fa224-5e96-4472-ad19-6d9567cb8a88 200 in 3125ms
+ GET /api/admin/accounts 200 in 883ms
+ GET / 200 in 694ms
+ ○ Compiling /_not-found/page ...
+ ✓ Compiled /_not-found/page in 655ms
+ GET /admin/users 404 in 912ms
+ GET /login?next=%2F 404 in 269ms
+ GET / 200 in 673ms
+ GET / 200 in 850ms
+ GET /admin/login 200 in 363ms
+ GET /admin/jobs 200 in 257ms
+ GET /api/admin/jobs 200 in 818ms
+ GET /api/admin/jobs 200 in 704ms
+ ○ Compiling /admin/applications ...
+ ✓ Compiled /admin/applications in 766ms
+ GET /admin/applications 200 in 952ms
+ ✓ Compiled /api/applications in 344ms
+ GET /api/admin/jobs 200 in 776ms
+ GET /api/applications 200 in 1255ms
+ GET /api/admin/jobs 200 in 662ms
+ GET /api/applications 200 in 749ms
+ ○ Compiling /admin/candidates ...
+ ✓ Compiled /admin/candidates in 1156ms
+ GET /admin/candidates 200 in 1347ms
+ GET /api/applications 200 in 806ms
+ GET /api/applications 200 in 787ms
+ ○ Compiling /admin/inbox ...
+ ✓ Compiled /admin/inbox in 982ms
+ GET /admin/inbox 200 in 1173ms
+ ○ Compiling /api/inbox/threads ...
+ ✓ Compiled /api/inbox/threads in 850ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 2024ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 698ms
+ ○ Compiling /admin/inbox/[threadId] ...
+ ✓ Compiled /admin/inbox/[threadId] in 1620ms
+ GET /admin/inbox/fde3bbf6-8f9f-43f6-8f4a-c99596556911 200 in 3013ms
+ ○ Compiling /api/inbox/templates ...
+ ✓ Compiled /api/inbox/templates in 535ms
+ GET /api/inbox/signatures/active 200 in 1207ms
+ GET /api/inbox/templates 200 in 1429ms
+ GET /api/inbox/signatures/active 200 in 715ms
+ GET /api/inbox/templates 200 in 715ms
+[GET /api/inbox/threads/[id]] {
+  code: 'PGRST200',
+  details: "Searched for a foreign key relationship between 'inbox_messages' and 'inbox_attachments' in the schema 'public', but no matches were found.",
+  hint: "Perhaps you meant 'inbox_threads' instead of 'inbox_attachments'.",
+  message: "Could not find a relationship between 'inbox_messages' and 'inbox_attachments' in the schema cache"
+}
+ GET /api/inbox/threads/fde3bbf6-8f9f-43f6-8f4a-c99596556911 500 in 3284ms
+ GET /admin/inbox 200 in 365ms
+[GET /api/inbox/threads/[id]] {
+  code: 'PGRST200',
+  details: "Searched for a foreign key relationship between 'inbox_messages' and 'inbox_attachments' in the schema 'public', but no matches were found.",
+  hint: "Perhaps you meant 'inbox_threads' instead of 'inbox_attachments'.",
+  message: "Could not find a relationship between 'inbox_messages' and 'inbox_attachments' in the schema cache"
+}
+ GET /api/inbox/threads/fde3bbf6-8f9f-43f6-8f4a-c99596556911 500 in 886ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 763ms
+ GET /admin/inbox 200 in 282ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 671ms
+ GET /admin/inbox/fde3bbf6-8f9f-43f6-8f4a-c99596556911 200 in 292ms
+ GET /api/inbox/templates 200 in 909ms
+ GET /api/inbox/signatures/active 200 in 973ms
+[GET /api/inbox/threads/[id]] {
+  code: 'PGRST200',
+  details: "Searched for a foreign key relationship between 'inbox_messages' and 'inbox_attachments' in the schema 'public', but no matches were found.",
+  hint: "Perhaps you meant 'inbox_threads' instead of 'inbox_attachments'.",
+  message: "Could not find a relationship between 'inbox_messages' and 'inbox_attachments' in the schema cache"
+}
+ GET /api/inbox/threads/fde3bbf6-8f9f-43f6-8f4a-c99596556911 500 in 1101ms
+ GET /admin/inbox 200 in 491ms
+ GET /api/inbox/templates 200 in 895ms
+ GET /api/inbox/signatures/active 200 in 967ms
+[GET /api/inbox/threads/[id]] {
+  code: 'PGRST200',
+  details: "Searched for a foreign key relationship between 'inbox_messages' and 'inbox_attachments' in the schema 'public', but no matches were found.",
+  hint: "Perhaps you meant 'inbox_threads' instead of 'inbox_attachments'.",
+  message: "Could not find a relationship between 'inbox_messages' and 'inbox_attachments' in the schema cache"
+}
+ GET /api/inbox/threads/fde3bbf6-8f9f-43f6-8f4a-c99596556911 500 in 883ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 708ms
+ GET /admin/inbox 200 in 337ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 617ms
+ GET /admin/inbox/fde3bbf6-8f9f-43f6-8f4a-c99596556911 200 in 271ms
+ GET /api/inbox/templates 200 in 846ms
+ GET /api/inbox/signatures/active 200 in 914ms
+[GET /api/inbox/threads/[id]] {
+  code: 'PGRST200',
+  details: "Searched for a foreign key relationship between 'inbox_messages' and 'inbox_attachments' in the schema 'public', but no matches were found.",
+  hint: "Perhaps you meant 'inbox_threads' instead of 'inbox_attachments'.",
+  message: "Could not find a relationship between 'inbox_messages' and 'inbox_attachments' in the schema cache"
+}
+ GET /api/inbox/threads/fde3bbf6-8f9f-43f6-8f4a-c99596556911 500 in 1062ms
+ GET /admin/inbox 200 in 444ms
+ GET /api/inbox/templates 200 in 795ms
+ GET /api/inbox/signatures/active 200 in 901ms
+[GET /api/inbox/threads/[id]] {
+  code: 'PGRST200',
+  details: "Searched for a foreign key relationship between 'inbox_messages' and 'inbox_attachments' in the schema 'public', but no matches were found.",
+  hint: "Perhaps you meant 'inbox_threads' instead of 'inbox_attachments'.",
+  message: "Could not find a relationship between 'inbox_messages' and 'inbox_attachments' in the schema cache"
+}
+ GET /api/inbox/threads/fde3bbf6-8f9f-43f6-8f4a-c99596556911 500 in 812ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 648ms
+ GET /admin/inbox 200 in 297ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 610ms
+ GET /admin/inbox/fde3bbf6-8f9f-43f6-8f4a-c99596556911 200 in 216ms
+ GET /api/inbox/templates 200 in 963ms
+ GET /api/inbox/signatures/active 200 in 967ms
+[GET /api/inbox/threads/[id]] {
+  code: 'PGRST200',
+  details: "Searched for a foreign key relationship between 'inbox_messages' and 'inbox_attachments' in the schema 'public', but no matches were found.",
+  hint: "Perhaps you meant 'inbox_threads' instead of 'inbox_attachments'.",
+  message: "Could not find a relationship between 'inbox_messages' and 'inbox_attachments' in the schema cache"
+}
+ GET /api/inbox/threads/fde3bbf6-8f9f-43f6-8f4a-c99596556911 500 in 1385ms
+ GET /admin/inbox 200 in 392ms
+ GET /api/inbox/templates 200 in 865ms
+ GET /api/inbox/signatures/active 200 in 866ms
+[GET /api/inbox/threads/[id]] {
+  code: 'PGRST200',
+  details: "Searched for a foreign key relationship between 'inbox_messages' and 'inbox_attachments' in the schema 'public', but no matches were found.",
+  hint: "Perhaps you meant 'inbox_threads' instead of 'inbox_attachments'.",
+  message: "Could not find a relationship between 'inbox_messages' and 'inbox_attachments' in the schema cache"
+}
+ GET /api/inbox/threads/fde3bbf6-8f9f-43f6-8f4a-c99596556911 500 in 971ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 775ms
+ GET /admin/inbox 200 in 273ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 756ms
+ ✓ Compiled /api/inbox/sync in 303ms
+[inbox] attachment 0 of message 394011ab-a0a5-4c59-a594-a19cd83a0268: upload: Bucket not found
+[inbox] attachment 1 of message 394011ab-a0a5-4c59-a594-a19cd83a0268: upload: Bucket not found
+[inbox] attachment 2 of message 394011ab-a0a5-4c59-a594-a19cd83a0268: upload: Bucket not found
+[inbox] attachment 3 of message 394011ab-a0a5-4c59-a594-a19cd83a0268: upload: Bucket not found
+[inbox] attachment 4 of message 394011ab-a0a5-4c59-a594-a19cd83a0268: upload: Bucket not found
+[inbox] attachment 5 of message 394011ab-a0a5-4c59-a594-a19cd83a0268: upload: Bucket not found
+[inbox] attachment 0 of message 8c2c27d9-b1bd-4ab3-a5c9-25703c2dae00: upload: Bucket not found
+[inbox] attachment 1 of message 8c2c27d9-b1bd-4ab3-a5c9-25703c2dae00: upload: Bucket not found
+[inbox] attachment 2 of message 8c2c27d9-b1bd-4ab3-a5c9-25703c2dae00: upload: Bucket not found
+[inbox] attachment 3 of message 8c2c27d9-b1bd-4ab3-a5c9-25703c2dae00: upload: Bucket not found
+[inbox] attachment 4 of message 8c2c27d9-b1bd-4ab3-a5c9-25703c2dae00: upload: Bucket not found
+[inbox] attachment 5 of message 8c2c27d9-b1bd-4ab3-a5c9-25703c2dae00: upload: Bucket not found
+[inbox] attachment 6 of message 8c2c27d9-b1bd-4ab3-a5c9-25703c2dae00: upload: Bucket not found
+[inbox] attachment 7 of message 8c2c27d9-b1bd-4ab3-a5c9-25703c2dae00: upload: Bucket not found
+[inbox] attachment 8 of message 8c2c27d9-b1bd-4ab3-a5c9-25703c2dae00: upload: Bucket not found
+[inbox] attachment 9 of message 8c2c27d9-b1bd-4ab3-a5c9-25703c2dae00: upload: Bucket not found
+[inbox] attachment 0 of message c373c2d5-5a27-46b2-8a07-7c87b461d237: upload: Bucket not found
+[inbox] attachment 0 of message 52dd220d-8b7f-46ab-901f-4f3e722ee4da: upload: Bucket not found
+[inbox] attachment 1 of message 52dd220d-8b7f-46ab-901f-4f3e722ee4da: upload: Bucket not found
+[inbox] attachment 2 of message 52dd220d-8b7f-46ab-901f-4f3e722ee4da: upload: Bucket not found
+[inbox] attachment 0 of message f8bf349c-e9f0-408e-ac48-d3a3f137cdf9: upload: Bucket not found
+[inbox] attachment 1 of message f8bf349c-e9f0-408e-ac48-d3a3f137cdf9: upload: Bucket not found
+[inbox] attachment 2 of message f8bf349c-e9f0-408e-ac48-d3a3f137cdf9: upload: Bucket not found
+[inbox] attachment 3 of message f8bf349c-e9f0-408e-ac48-d3a3f137cdf9: upload: Bucket not found
+[inbox] attachment 0 of message caf76b7d-b0a8-46ea-b594-e9605e952fbe: upload: Bucket not found
+[inbox] attachment 1 of message caf76b7d-b0a8-46ea-b594-e9605e952fbe: upload: Bucket not found
+[inbox] attachment 2 of message caf76b7d-b0a8-46ea-b594-e9605e952fbe: upload: Bucket not found
+[inbox] attachment 3 of message caf76b7d-b0a8-46ea-b594-e9605e952fbe: upload: Bucket not found
+[inbox] attachment 4 of message caf76b7d-b0a8-46ea-b594-e9605e952fbe: upload: Bucket not found
+[inbox] attachment 5 of message caf76b7d-b0a8-46ea-b594-e9605e952fbe: upload: Bucket not found
+[inbox] attachment 0 of message 92fb5a59-cf37-4d46-8e9e-b4cbd79560db: upload: Bucket not found
+[inbox] attachment 1 of message 92fb5a59-cf37-4d46-8e9e-b4cbd79560db: upload: Bucket not found
+[inbox] attachment 2 of message 92fb5a59-cf37-4d46-8e9e-b4cbd79560db: upload: Bucket not found
+[inbox] attachment 3 of message 92fb5a59-cf37-4d46-8e9e-b4cbd79560db: upload: Bucket not found
+[inbox] attachment 4 of message 92fb5a59-cf37-4d46-8e9e-b4cbd79560db: upload: Bucket not found
+[inbox] attachment 5 of message 92fb5a59-cf37-4d46-8e9e-b4cbd79560db: upload: Bucket not found
+[inbox] attachment 0 of message de0db4fe-4222-4d4e-8168-c2b5afa046f8: upload: Bucket not found
+[inbox] attachment 1 of message de0db4fe-4222-4d4e-8168-c2b5afa046f8: upload: Bucket not found
+[inbox] attachment 2 of message de0db4fe-4222-4d4e-8168-c2b5afa046f8: upload: Bucket not found
+[inbox] attachment 3 of message de0db4fe-4222-4d4e-8168-c2b5afa046f8: upload: Bucket not found
+[inbox] attachment 4 of message de0db4fe-4222-4d4e-8168-c2b5afa046f8: upload: Bucket not found
+[inbox] attachment 5 of message de0db4fe-4222-4d4e-8168-c2b5afa046f8: upload: Bucket not found
+[inbox] attachment 0 of message 76763510-1761-4f42-9117-5d73e75ea4f9: upload: Bucket not found
+[inbox] attachment 1 of message 76763510-1761-4f42-9117-5d73e75ea4f9: upload: Bucket not found
+[inbox] attachment 2 of message 76763510-1761-4f42-9117-5d73e75ea4f9: upload: Bucket not found
+[inbox] attachment 3 of message 76763510-1761-4f42-9117-5d73e75ea4f9: upload: Bucket not found
+[inbox] attachment 4 of message 76763510-1761-4f42-9117-5d73e75ea4f9: upload: Bucket not found
+[inbox] attachment 5 of message 76763510-1761-4f42-9117-5d73e75ea4f9: upload: Bucket not found
+[inbox] attachment 0 of message 93934607-c175-4a4e-b74f-b14f193781b7: upload: Bucket not found
+[inbox] attachment 0 of message cdd5bb1f-543a-45a0-9d0b-ad31ae7815b2: upload: Bucket not found
+[inbox] attachment 1 of message cdd5bb1f-543a-45a0-9d0b-ad31ae7815b2: upload: Bucket not found
+[inbox] attachment 2 of message cdd5bb1f-543a-45a0-9d0b-ad31ae7815b2: upload: Bucket not found
+[inbox] attachment 3 of message cdd5bb1f-543a-45a0-9d0b-ad31ae7815b2: upload: Bucket not found
+[inbox] attachment 4 of message cdd5bb1f-543a-45a0-9d0b-ad31ae7815b2: upload: Bucket not found
+[inbox] attachment 5 of message cdd5bb1f-543a-45a0-9d0b-ad31ae7815b2: upload: Bucket not found
+[inbox] attachment 6 of message cdd5bb1f-543a-45a0-9d0b-ad31ae7815b2: upload: Bucket not found
+[inbox] attachment 7 of message cdd5bb1f-543a-45a0-9d0b-ad31ae7815b2: upload: Bucket not found
+[inbox] attachment 8 of message cdd5bb1f-543a-45a0-9d0b-ad31ae7815b2: upload: Bucket not found
+[inbox] attachment 0 of message e4568e4e-9ce8-4ba8-a3d5-c1757a3ab576: upload: Bucket not found
+[inbox] attachment 1 of message e4568e4e-9ce8-4ba8-a3d5-c1757a3ab576: upload: Bucket not found
+[inbox] attachment 0 of message 7e3b2a82-f574-4677-b8fa-4dfc64fe8bcc: upload: Bucket not found
+[inbox] attachment 1 of message 7e3b2a82-f574-4677-b8fa-4dfc64fe8bcc: upload: Bucket not found
+[inbox] attachment 2 of message 7e3b2a82-f574-4677-b8fa-4dfc64fe8bcc: upload: Bucket not found
+[inbox] attachment 0 of message e2260b4f-a933-4b04-9d99-4e0a0eaeeff0: upload: Bucket not found
+[inbox] attachment 1 of message e2260b4f-a933-4b04-9d99-4e0a0eaeeff0: upload: Bucket not found
+[inbox] attachment 2 of message e2260b4f-a933-4b04-9d99-4e0a0eaeeff0: upload: Bucket not found
+[inbox] attachment 3 of message e2260b4f-a933-4b04-9d99-4e0a0eaeeff0: upload: Bucket not found
+ POST /api/inbox/sync 200 in 34275ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 735ms
+ GET /api/inbox/threads/fde3bbf6-8f9f-43f6-8f4a-c99596556911 401 in 1016ms
+ GET /admin/inbox/fde3bbf6-8f9f-43f6-8f4a-c99596556911 200 in 298ms
+ GET /api/inbox/signatures/active 200 in 894ms
+ GET /api/inbox/templates 200 in 1082ms
+ GET /api/inbox/threads/fde3bbf6-8f9f-43f6-8f4a-c99596556911 200 in 1292ms
+ GET /api/inbox/signatures/active 200 in 772ms
+ GET /api/inbox/templates 200 in 707ms
+ GET /api/inbox/threads/fde3bbf6-8f9f-43f6-8f4a-c99596556911 200 in 1108ms
+ GET /admin/jobs 200 in 262ms
+ GET /api/admin/jobs 200 in 677ms
+ GET /api/admin/jobs 200 in 599ms
+ GET /admin/applications 200 in 238ms
+ GET /api/admin/jobs 200 in 696ms
+ GET /api/applications 200 in 1162ms
+ GET /api/admin/jobs 200 in 587ms
+ GET /api/applications 200 in 770ms
+ GET /admin/candidates 200 in 267ms
+ GET /api/applications 200 in 770ms
+ GET /api/applications 200 in 805ms
+ GET /admin/inbox 200 in 278ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 722ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 660ms
+ GET /admin/inbox/8432c818-24c3-4da0-8d3c-5d918d855bed 200 in 270ms
+ GET /api/inbox/templates 200 in 889ms
+ GET /api/inbox/signatures/active 200 in 1060ms
+ GET /api/inbox/templates 200 in 733ms
+ GET /api/inbox/signatures/active 200 in 847ms
+ GET /api/inbox/threads/8432c818-24c3-4da0-8d3c-5d918d855bed 200 in 2474ms
+ GET /api/inbox/threads/8432c818-24c3-4da0-8d3c-5d918d855bed 200 in 1867ms
+ GET /admin/inbox 200 in 247ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 669ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 594ms
+ GET /admin/inbox/fde3bbf6-8f9f-43f6-8f4a-c99596556911 200 in 275ms
+ GET /api/inbox/templates 200 in 777ms
+ GET /api/inbox/signatures/active 200 in 844ms
+ GET /api/inbox/threads/fde3bbf6-8f9f-43f6-8f4a-c99596556911 200 in 1049ms
+ GET /api/inbox/templates 200 in 731ms
+ GET /api/inbox/signatures/active 200 in 724ms
+ GET /api/inbox/threads/fde3bbf6-8f9f-43f6-8f4a-c99596556911 200 in 853ms
+ ✓ Compiled in 581ms
+ GET /admin/inbox 200 in 418ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 1343ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 749ms
+ POST /api/inbox/sync 200 in 4985ms
+ GET /admin/inbox 200 in 792ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 861ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 781ms
+ GET /admin/inbox/fde3bbf6-8f9f-43f6-8f4a-c99596556911 200 in 280ms
+ GET /api/inbox/templates 200 in 1469ms
+ GET /api/inbox/signatures/active 200 in 1554ms
+ GET /api/inbox/threads/fde3bbf6-8f9f-43f6-8f4a-c99596556911 200 in 1823ms
+ GET /api/inbox/templates 200 in 779ms
+ ✓ Compiled /api/inbox/attachments/[attachmentId] in 339ms
+ GET /api/inbox/signatures/active 200 in 796ms
+ GET /api/inbox/threads/fde3bbf6-8f9f-43f6-8f4a-c99596556911 200 in 1006ms
+ GET /api/inbox/attachments/272130e5-1f1e-42d4-8b23-b99c3758ce09 200 in 3744ms
+ GET /admin/inbox 200 in 259ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 673ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 800ms
+ GET /admin/inbox/8432c818-24c3-4da0-8d3c-5d918d855bed 200 in 269ms
+ GET /api/inbox/signatures/active 200 in 940ms
+ GET /api/inbox/templates 200 in 970ms
+ GET /api/inbox/templates 200 in 784ms
+ GET /api/inbox/signatures/active 200 in 987ms
+ GET /api/inbox/threads/8432c818-24c3-4da0-8d3c-5d918d855bed 200 in 2276ms
+ GET /api/inbox/threads/8432c818-24c3-4da0-8d3c-5d918d855bed 200 in 2314ms
+ GET /admin/inbox 200 in 240ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 803ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 670ms
+ GET /admin/inbox/fde3bbf6-8f9f-43f6-8f4a-c99596556911 200 in 273ms
+ GET /api/inbox/signatures/active 200 in 966ms
+ GET /api/inbox/templates 200 in 1007ms
+ GET /api/inbox/threads/fde3bbf6-8f9f-43f6-8f4a-c99596556911 200 in 1390ms
+ GET /api/inbox/signatures/active 200 in 801ms
+ GET /api/inbox/templates 200 in 768ms
+ GET /api/inbox/threads/fde3bbf6-8f9f-43f6-8f4a-c99596556911 200 in 1106ms
+ ✓ Compiled in 947ms
+ ✓ Compiled in 601ms
+ POST /api/inbox/sync 200 in 210691ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 680ms
+ GET /admin/inbox 200 in 290ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 1143ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 668ms
+ GET /admin/inbox/c8248fe9-637e-49cd-af8d-34d9f04a54eb 200 in 408ms
+ GET /api/inbox/signatures/active 200 in 844ms
+ GET /api/inbox/templates 200 in 988ms
+ GET /api/inbox/signatures/active 200 in 668ms
+ GET /api/inbox/threads/c8248fe9-637e-49cd-af8d-34d9f04a54eb 200 in 1652ms
+ GET /api/inbox/templates 200 in 732ms
+ GET /api/inbox/threads/c8248fe9-637e-49cd-af8d-34d9f04a54eb 200 in 995ms
+ GET /admin/inbox 200 in 247ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 815ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 769ms
+ GET /admin/inbox/8432c818-24c3-4da0-8d3c-5d918d855bed 200 in 263ms
+ GET /api/inbox/signatures/active 200 in 861ms
+ GET /api/inbox/templates 200 in 910ms
+ GET /api/inbox/signatures/active 200 in 957ms
+ GET /api/inbox/templates 200 in 997ms
+ GET /api/inbox/threads/8432c818-24c3-4da0-8d3c-5d918d855bed 200 in 2286ms
+ GET /api/inbox/threads/8432c818-24c3-4da0-8d3c-5d918d855bed 200 in 2074ms
+ GET /admin/inbox 200 in 222ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 916ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 828ms
+ GET /admin/inbox/8432c818-24c3-4da0-8d3c-5d918d855bed 200 in 241ms
+ GET /api/inbox/signatures/active 200 in 908ms
+ GET /api/inbox/templates 200 in 943ms
+ GET /api/inbox/templates 200 in 948ms
+ GET /api/inbox/signatures/active 200 in 1280ms
+ GET /api/inbox/threads/8432c818-24c3-4da0-8d3c-5d918d855bed 200 in 3046ms
+ GET /api/inbox/threads/8432c818-24c3-4da0-8d3c-5d918d855bed 200 in 2107ms
+ ✓ Compiled in 493ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ✓ Compiled in 501ms
+ GET /admin/inbox/8432c818-24c3-4da0-8d3c-5d918d855bed 200 in 1127ms
+ GET /api/inbox/signatures/active 200 in 866ms
+ GET /api/inbox/templates 200 in 893ms
+ GET /api/inbox/signatures/active 200 in 852ms
+ GET /api/inbox/templates 200 in 854ms
+ GET /api/inbox/threads/8432c818-24c3-4da0-8d3c-5d918d855bed 200 in 2478ms
+ GET /api/inbox/threads/8432c818-24c3-4da0-8d3c-5d918d855bed 200 in 1832ms
+ ✓ Compiled in 688ms
+ ✓ Compiled in 608ms
+ GET /admin/inbox 200 in 220ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 1315ms
+ GET /api/inbox/threads?page=1&pageSize=25 200 in 816ms
+ GET /admin/inbox/fde3bbf6-8f9f-43f6-8f4a-c99596556911 200 in 395ms
+ GET /api/inbox/templates 200 in 1084ms
+ GET /api/inbox/signatures/active 200 in 1279ms
+ GET /api/inbox/threads/fde3bbf6-8f9f-43f6-8f4a-c99596556911 200 in 1668ms
+ GET /api/inbox/templates 200 in 813ms
+ GET /api/inbox/signatures/active 200 in 754ms
+ GET /api/inbox/threads/fde3bbf6-8f9f-43f6-8f4a-c99596556911 200 in 1213ms
